@@ -1,5 +1,5 @@
 # *auto-generated*
-A template repository for building python packages. Please replace `$package` with the package's name in `metadata.yml`.
+Manages trade dates.
 
 ## Installation
 ```sh
