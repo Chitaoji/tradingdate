@@ -382,8 +382,7 @@ class TradeDate:
             d = year[m][0]
             return self.__class__(f"{y+1}{m:02}{d:02}", calendar=self.calendar) + value
         raise OutOfCalendarError(
-            f"date {self} + {value} is out of range "
-            f"[{self.calendar.start}, {self.calendar.end}]"
+            f"result is out of range " f"[{self.calendar.start}, {self.calendar.end}]"
         )
 
     def __sub__(self, value: int, /) -> Self:
@@ -405,8 +404,7 @@ class TradeDate:
             d = year[m][-1]
             return self.__class__(f"{y-1}{m:02}{d:02}", calendar=self.calendar) - value
         raise OutOfCalendarError(
-            f"date {self} + {value} is out of range "
-            f"[{self.calendar.start}, {self.calendar.end}]"
+            f"result is out of range [{self.calendar.start}, {self.calendar.end}]"
         )
 
     def __repr__(self) -> str:
