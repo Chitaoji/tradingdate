@@ -7,8 +7,12 @@ NOTE: this module is private. All functions and objects are available in the mai
 """
 
 import datetime
+from typing import TYPE_CHECKING
 
 import chinese_calendar
+
+if TYPE_CHECKING:
+    from ._typing import CalendarDict
 
 __all__ = ["CalendarEngine"]
 
@@ -16,15 +20,26 @@ __all__ = ["CalendarEngine"]
 class CalendarEngine:
     """Calendar engine."""
 
-    calendar_cache: dict[str, list[int]] = {}
+    calendar_cache: dict[str, "CalendarDict"] = {}
 
-    def get_chinese_calendar(self) -> list[int]:
+    def get_chinese_calendar(self) -> "CalendarDict":
         """Get the chinese calendar."""
         if "chinese" not in self.__class__.calendar_cache:
-            self.__class__.calendar_cache["chinese"] = [
-                int(x.strftime("%Y%m%d"))
-                for x in chinese_calendar.get_workdays(
-                    datetime.date(2004, 1, 1), datetime.date(2025, 1, 1)
-                )
-            ]
+            y, m, d = 2004, 1, 1
+            cal: "CalendarDict" = {y: {m: []}}
+            for x in chinese_calendar.get_workdays(
+                datetime.date(y, m, d), datetime.date(2025, 12, 31)
+            ):
+                if x.year == y:
+                    if x.month == m:
+                        y, m, d = x.year, x.month, x.day
+                        cal[y][m].append(d)
+                    else:
+                        y, m, d = x.year, x.month, x.day
+                        cal[y][m] = [d]
+                else:
+                    y, m, d = x.year, x.month, x.day
+                    cal[y] = {}
+                    cal[y][m] = [d]
+            self.__class__.calendar_cache["chinese"] = cal
         return self.__class__.calendar_cache["chinese"]
