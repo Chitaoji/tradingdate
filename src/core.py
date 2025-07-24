@@ -1,28 +1,37 @@
 """
-Contains the core of tradedate: ... , etc.
+Contains the core of tradedate: tradedate(), get_calendar(), etc.
 
 NOTE: this module is private. All functions and objects are available in the main
 `tradedate` namespace - use that instead.
 
 """
 
-from typing import Literal, Self
+from typing import Iterator, Literal, Self
 
 import numpy as np
 
-__all__ = ["tradedate", "TradeDate", "TradingCalendar"]
+from .calendar_engine import CalendarEngine
+
+__all__ = [
+    "tradedate",
+    "get_tradedates",
+    "get_calendar",
+    "TradeDate",
+    "TradingCalendar",
+]
 
 
 def tradedate(
     date: int | str,
+    /,
     calendar_id: str = "chinese",
     not_exist: Literal["forward", "backward"] = "backward",
-):
+) -> "TradeDate":
     """
     Returns a `TradeDate` object.
 
-    Returns
-    -------
+    Parameters
+    ----------
     date : int | str
         The date.
     calendar_id : str, optional
@@ -32,12 +41,15 @@ def tradedate(
         the nearest trade date after `date`; if "backward", return the nearest
         trade date before it. By default "backward".
 
+    Returns
+    -------
+    TradeDate
+        Trade date.
+
     """
-    match calendar_id:
-        case "chinese":
-            calendar = TradingCalendar([20240101])
-        case _ as x:
-            raise ValueError(f"invalid calendar_id: {x}")
+    calendar = get_calendar(calendar_id)
+    if date in calendar:
+        return TradeDate(date, calendar=calendar)
     match not_exist:
         case "forward":
             return calendar.get_nearest_date_after(date)
@@ -47,25 +59,84 @@ def tradedate(
             raise ValueError(f"invalid fix_date: {x}")
 
 
+def get_tradedates(
+    start: int | str | None = None,
+    end: int | str | None = None,
+    calendar_id: str = "chinese",
+) -> Iterator["TradeDate"]:
+    """
+    Returns an iterator of `TradeDate` objects.
+
+    Parameters
+    ----------
+    start : int | str | None, optional
+        Start date, by default None.
+    end : int | str | None, optional
+        End date, by default None.
+    calendar_id : str, optional
+        Calendar id, by default "chinese".
+
+    Returns
+    -------
+    Iterator[TradeDate]
+        Iterator of dates.
+
+    """
+    calendar = get_calendar(calendar_id)
+    start = calendar.start.asint() if start is None else int(start)
+    end = calendar.end.asint() if end is None else int(end)
+    return (
+        TradeDate(x, calendar=calendar) for x in calendar.dates if start <= x <= end
+    )
+
+
+def get_calendar(calendar_id: str = "chinese", /) -> "TradingCalendar":
+    """
+    Returns a `TradingCalendar` object.
+
+    Parameters
+    ----------
+    calendar_id : str, optional
+        Calendar id, by default "chinese".
+
+    Returns
+    -------
+    TradingCalendar
+        Calendar.
+
+    """
+    match calendar_id:
+        case "chinese":
+            dates = CalendarEngine().get_chinese_calendar()
+        case _ as x:
+            raise ValueError(f"invalid calendar_id: {x}")
+    return TradingCalendar(dates)
+
+
+# ==============================================================================
+#                                Core Types
+# ==============================================================================
+
+
 class TradingCalendar:
     """
     Stores a trading calendar.
 
     Parameters
     ----------
-    dates : list[int | str]
-        List of dates.
+    dates : list[int]
+        List of dates, must be sorted.
 
     """
 
     __slots__ = ["dates", "__start_date", "__end_date"]
 
-    def __init__(self, dates: list[int | str]) -> None:
+    def __init__(self, dates: list[int], /) -> None:
         if not dates:
             raise ValueError("empty dates")
-        self.dates = [int(d) for d in dates]
-        self.__start_date = min(self.dates)
-        self.__end_date = max(self.dates)
+        self.dates = dates
+        self.__start_date = self.dates[0]
+        self.__end_date = self.dates[-1]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.__start_date} ~ {self.__end_date})"
@@ -94,7 +165,7 @@ class TradingCalendar:
 
     def get_nearest_date_before(self, date: int | str) -> "TradeDate":
         """Get the nearest date before the date (including itself)."""
-        if (date := int(date)) < self.__end_date:
+        if (date := int(date)) < self.__start_date:
             raise OutOfCalendarError(
                 f"date {date} is out of range [{self.__start_date}, {self.__end_date}]"
             )
@@ -107,7 +178,7 @@ class YearCalendar(TradingCalendar):
 
     __slots__ = ["__year"]
 
-    def __init__(self, year: int, dates: list[int | str]) -> None:
+    def __init__(self, year: int, dates: list[int], /) -> None:
         super().__init__(dates)
         self.__year = year
 
@@ -153,7 +224,7 @@ class MonthCalendar(TradingCalendar):
 
     __slots__ = ["__year", "__month"]
 
-    def __init__(self, year: int, month: int, dates: list[int | str]) -> None:
+    def __init__(self, year: int, month: int, dates: list[int], /) -> None:
         super().__init__(dates)
         self.__year = year
         self.__month = month
@@ -200,7 +271,7 @@ class DayCalendar(TradingCalendar):
 
     __slots__ = ["__year", "__month", "__day"]
 
-    def __init__(self, year: int, month: int, day: int, dates: list[int | str]) -> None:
+    def __init__(self, year: int, month: int, day: int, dates: list[int], /) -> None:
         super().__init__(dates)
         self.__year = year
         self.__month = month
@@ -251,7 +322,7 @@ class TradeDate:
 
     Parameters
     ----------
-    date : int | str
+    date : int
         The date.
     calendar : TradingCalendar
         Specifies the trading calendar.
@@ -260,14 +331,12 @@ class TradeDate:
 
     __slots__ = ["calendar", "__date"]
 
-    def __init__(self, date: int | str, calendar: TradingCalendar) -> None:
-        self.calendar = calendar
-        if (date := int(date)) not in self.calendar:
-            raise NotOnCalendarError(f"date {date} is not on the calendar")
+    def __init__(self, date: int, /, calendar: TradingCalendar) -> None:
         self.__date = date
+        self.calendar = calendar
 
     def __eq__(self, value: Self | int | str, /) -> bool:
-        return int(self) == int(value)
+        return self.asint() == int(value)
 
     def __add__(self, value: int, /) -> Self:
         dates = self.calendar.dates
@@ -352,10 +421,6 @@ class TradeDate:
         """Returns the day."""
         d = self.asstr()
         return DayCalendar(int(d[:4]), int(d[4:6]), int(d[6:]), [self.asint()])
-
-
-class NotOnCalendarError(Exception):
-    """Raised when date is not on the calendar."""
 
 
 class OutOfCalendarError(Exception):
