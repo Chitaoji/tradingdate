@@ -28,7 +28,8 @@ class CalendarEngine:
             y, m, d = 2004, 1, 1
             cal: "CalendarDict" = {y: {m: []}}
             for x in chinese_calendar.get_workdays(
-                datetime.date(y, m, d), datetime.date(2025, 12, 31)
+                datetime.date(y, m, d),
+                datetime.date(datetime.datetime.now().year, 12, 31),
             ):
                 if x.year == y:
                     if x.month == m:

@@ -90,7 +90,7 @@ def get_tradedates(
     calendar = get_calendar(calendar_id)
     start = calendar.start.asint() if start is None else int(start)
     end = calendar.end.asint() if end is None else int(end)
-    return (TradeDate(x, calendar=calendar) for x in calendar.cal if start <= x <= end)
+    return (x for x in calendar if start <= x.asint() <= end)
 
 
 def get_calendar(calendar_id: str = "chinese", /) -> "TradingCalendar":
@@ -132,69 +132,77 @@ class TradingCalendar:
 
     """
 
-    __slots__ = ["cal", "__start_date", "__end_date"]
+    __slots__ = ["caldict"]
 
     def __init__(self, calendar: "CalendarDict", /) -> None:
         if not calendar:
             raise ValueError("empty calendar")
-        self.cal = calendar
-        self.__start_date = (
-            f"{(y:=min(calendar))}{(m:=min(calendar[y])):02}{calendar[y][m][0]:02}"
-        )
-        self.__end_date = (
-            f"{(y:=max(calendar))}{(m:=max(calendar[y])):02}{calendar[y][m][-1]:02}"
-        )
+        self.caldict = calendar
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.__start_date} ~ {self.__end_date})"
+        return f"{self.__class__.__name__}({self.start} ~ {self.end})"
 
     def __contains__(self, value: "TradeDate | int | str") -> bool:
         value = str(value)
         y, m, d = int(value[:4]), int(value[4:6]), int(value[6:])
-        return y in self.cal and m in self.cal[y] and d in self.cal[y][m]
+        return y in self.caldict and m in self.caldict[y] and d in self.caldict[y][m]
+
+    def __iter__(self) -> Iterator["TradeDate"]:
+        return (
+            TradeDate(f"{y}{m:02}{d:02}", calendar=self)
+            for y in self.caldict
+            for m in self.caldict[y]
+            for d in self.caldict[y][m]
+        )
 
     @property
     def start(self) -> "TradeDate":
         """Return the starting date of the calendar."""
-        return TradeDate(self.__start_date, calendar=self)
+        y = min(self.caldict)
+        m = min(self.caldict[y])
+        d = self.caldict[y][m][0]
+        return TradeDate(f"{y}{m:02}{d:02}", calendar=self)
 
     @property
     def end(self) -> "TradeDate":
         """Return the ending date of the calendar."""
-        return TradeDate(self.__end_date, calendar=self)
+        y = max(self.caldict)
+        m = max(self.caldict[y])
+        d = self.caldict[y][m][-1]
+        return TradeDate(f"{y}{m:02}{d:02}", calendar=self)
 
     def get_nearest_date_after(self, date: int | str) -> "TradeDate":
         """Get the nearest date after the date (including itself)."""
         date = str(date)
         y, m, d = int(date[:4]), int(date[4:6]), int(date[6:])
-        if y in self.cal:
-            year = self.cal[y]
+        if y in self.caldict:
+            year = self.caldict[y]
             if m in year:
                 month = year[m]
                 if d <= month[-1]:
-                    new_d = self.cal[np.argmax(np.array(month) >= d)]
+                    new_d = month[np.argmax(np.array(month) >= d)]
                     return TradeDate(f"{y}{m:02}{new_d:02}", calendar=self)
                 return self.get_nearest_date_after(f"{y}{m+1:02}01")
             return self.get_nearest_date_after(f"{y+1}0101")
         raise OutOfCalendarError(
-            f"date {date} is out of range [{self.__start_date}, {self.__end_date}]"
+            f"date {date} is out of range [{self.start}, {self.end}]"
         )
 
     def get_nearest_date_before(self, date: int | str) -> "TradeDate":
         """Get the nearest date before the date (including itself)."""
         date = str(date)
         y, m, d = int(date[:4]), int(date[4:6]), int(date[6:])
-        if y in self.cal:
-            year = self.cal[y]
+        if y in self.caldict:
+            year = self.caldict[y]
             if m in year:
                 month = year[m]
                 if d >= month[0]:
-                    new_d = self.cal[np.argmin(np.array(month) <= d) - 1]
+                    new_d = month[np.argmin(np.array(month) <= d) - 1]
                     return TradeDate(f"{y}{m:02}{new_d:02}", calendar=self)
                 return self.get_nearest_date_before(f"{y}{m-1:02}31")
             return self.get_nearest_date_before(f"{y-1}1231")
         raise OutOfCalendarError(
-            f"date {date} is out of range [{self.__start_date}, {self.__end_date}]"
+            f"date {date} is out of range [{self.start}, {self.end}]"
         )
 
 
@@ -223,7 +231,7 @@ class YearCalendar(TradingCalendar):
             An integer representing the year.
 
         """
-        return list(self.cal)[0]
+        return list(self.caldict)[0]
 
     def asstr(self) -> str:
         """
@@ -242,7 +250,7 @@ class MonthCalendar(TradingCalendar):
     """Trading month."""
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({list(self.cal)[0]}{self.asint():02})"
+        return f"{self.__class__.__name__}({list(self.caldict)[0]}{self.asint():02})"
 
     def __str__(self) -> str:
         return self.asstr()
@@ -263,7 +271,7 @@ class MonthCalendar(TradingCalendar):
             An integer representing the month.
 
         """
-        return list(list(self.cal.values())[0])[0]
+        return list(list(self.caldict.values())[0])[0]
 
     def asstr(self) -> str:
         """
@@ -283,8 +291,8 @@ class DayCalendar(TradingCalendar):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}({list(self.cal)[0]}"
-            f"{list(list(self.cal.values())[0])[0]:02}{self.asint():02})"
+            f"{self.__class__.__name__}({list(self.caldict)[0]}"
+            f"{list(list(self.caldict.values())[0])[0]:02}{self.asint():02})"
         )
 
     def __str__(self) -> str:
@@ -306,7 +314,7 @@ class DayCalendar(TradingCalendar):
             An integer representing the day.
 
         """
-        return list(list(self.cal.values())[0].values())[0][0]
+        return list(list(self.caldict.values())[0].values())[0][0]
 
     def asstr(self) -> str:
         """
@@ -327,7 +335,7 @@ class TradeDate:
 
     Parameters
     ----------
-    date : int
+    date : int | str
         The date.
     calendar : TradingCalendar
         Specifies the trading calendar.
@@ -336,32 +344,70 @@ class TradeDate:
 
     __slots__ = ["calendar", "__date"]
 
-    def __init__(self, date: int, /, calendar: TradingCalendar) -> None:
-        self.__date = date
+    def __init__(self, date: int | str, /, calendar: TradingCalendar) -> None:
+        self.__date = int(date)
         self.calendar = calendar
 
     def __eq__(self, value: Self | int | str, /) -> bool:
         return self.asint() == int(value)
 
+    def __gt__(self, value: Self | int | str, /) -> bool:
+        return self.asint() > int(value)
+
+    def __lt__(self, value: Self | int | str, /) -> bool:
+        return self.asint() < int(value)
+
+    def __ge__(self, value: Self | int | str, /) -> bool:
+        return self.asint() >= int(value)
+
+    def __le__(self, value: Self | int | str, /) -> bool:
+        return self.asint() <= int(value)
+
     def __add__(self, value: int, /) -> Self:
-        dates = self.calendar.cal
-        new_idx = dates.index(self.__date) + value
-        if new_idx >= len(dates):
-            raise OutOfCalendarError(
-                f"date {self} + {value} is out of range "
-                f"[{self.calendar.start}, {self.calendar.end}]"
-            )
-        return self.__class__(dates[new_idx], calendar=self.calendar)
+        date = self.asstr()
+        y, m, d = int(date[:4]), int(date[4:6]), int(date[6:])
+        year = self.calendar.caldict[y]
+        month = year[m]
+        idx = month.index(d)
+        if idx + value < len(month):
+            d = month[idx + value]
+            return self.__class__(f"{y}{m:02}{d:02}", calendar=self.calendar)
+        value -= len(month) - idx
+        if m + 1 in year:
+            d = year[m + 1][0]
+            return self.__class__(f"{y}{m+1:02}{d:02}", calendar=self.calendar) + value
+        if y + 1 in self.calendar.caldict:
+            year = self.calendar.caldict[y + 1]
+            m = min(year)
+            d = year[m][0]
+            return self.__class__(f"{y+1}{m:02}{d:02}", calendar=self.calendar) + value
+        raise OutOfCalendarError(
+            f"date {self} + {value} is out of range "
+            f"[{self.calendar.start}, {self.calendar.end}]"
+        )
 
     def __sub__(self, value: int, /) -> Self:
-        dates = self.calendar.cal
-        new_idx = dates.index(self.__date) - value
-        if new_idx < 0:
-            raise OutOfCalendarError(
-                f"date {self} - {value} is out of range "
-                f"[{self.calendar.start}, {self.calendar.end}]"
-            )
-        return self.__class__(dates[new_idx], calendar=self.calendar)
+        date = self.asstr()
+        y, m, d = int(date[:4]), int(date[4:6]), int(date[6:])
+        year = self.calendar.caldict[y]
+        month = year[m]
+        idx = month.index(d)
+        if idx - value >= 0:
+            d = month[idx - value]
+            return self.__class__(f"{y}{m:02}{d:02}", calendar=self.calendar)
+        value -= idx + 1
+        if m - 1 in year:
+            d = year[m - 1][-1]
+            return self.__class__(f"{y}{m-1:02}{d:02}", calendar=self.calendar) - value
+        if y - 1 in self.calendar.caldict:
+            year = self.calendar.caldict[y - 1]
+            m = max(year)
+            d = year[m][-1]
+            return self.__class__(f"{y-1}{m:02}{d:02}", calendar=self.calendar) - value
+        raise OutOfCalendarError(
+            f"date {self} + {value} is out of range "
+            f"[{self.calendar.start}, {self.calendar.end}]"
+        )
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.__date})"
@@ -411,18 +457,20 @@ class TradeDate:
     def year(self) -> YearCalendar:
         """Returns the year."""
         y = int(self.asstr()[:4])
-        return YearCalendar({y: self.calendar.cal[y]})
+        return YearCalendar({y: self.calendar.caldict[y]})
 
     @property
     def month(self) -> MonthCalendar:
         """Returns the month."""
-        y, m = int(self.asstr()[:4]), int(self.asstr()[4:6])
-        return MonthCalendar({y: {m: self.calendar.cal[y][m]}})
+        date = self.asstr()
+        y, m = int(date[:4]), int(date[4:6])
+        return MonthCalendar({y: {m: self.calendar.caldict[y][m]}})
 
     @property
     def day(self) -> DayCalendar:
         """Returns the day."""
-        y, m, d = int(self.asstr()[:4]), int(self.asstr()[4:6]), int(self.asstr()[6:])
+        date = self.asstr()
+        y, m, d = int(date[:4]), int(date[4:6]), int(date[6:])
         return DayCalendar({y: {m: [d]}})
 
 
