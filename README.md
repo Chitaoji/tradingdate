@@ -1,9 +1,9 @@
-# tradedate
+# tradingdate
 Manages trade dates.
 
 ## Installation
 ```sh
-$ pip install tradedate
+$ pip install tradingdate
 ```
 
 ## Requirements
@@ -14,10 +14,10 @@ numpy
 
 ## See Also
 ### Github repository
-* https://github.com/Chitaoji/$package/
+* https://github.com/Chitaoji/tradingdate/
 
 ### PyPI project
-* https://pypi.org/project/tradedate/
+* https://pypi.org/project/tradingdate/
 
 ## License
 This project falls under the BSD 3-Clause License.
