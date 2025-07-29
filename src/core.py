@@ -215,6 +215,10 @@ class TradingCalendar:
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
 
+    def get_year(self, year: int) -> "YearCalendar":
+        """Returns a year calendar."""
+        return YearCalendar({year: self.caldict[year]})
+
 
 class YearCalendar(TradingCalendar):
     """Trading year."""
@@ -255,6 +259,11 @@ class YearCalendar(TradingCalendar):
         """
         return str(self.asint())
 
+    def get_month(self, month: int) -> "MonthCalendar":
+        """Returns a month calendar."""
+        y = self.asint()
+        return MonthCalendar({y: {month: self.caldict[y][month]}})
+
 
 class MonthCalendar(TradingCalendar):
     """Trading month."""
@@ -294,6 +303,14 @@ class MonthCalendar(TradingCalendar):
 
         """
         return f"{self.asint():02}"
+
+    def get_day(self, day: int) -> "DayCalendar":
+        """Returns a day calendar."""
+        y = list(self.caldict)[0]
+        m = self.asint()
+        if day not in self.caldict[y][m]:
+            raise KeyError(day)
+        return DayCalendar({y: {m: [day]}})
 
 
 class DayCalendar(TradingCalendar):
@@ -447,8 +464,7 @@ class TradingDate:
     @property
     def year(self) -> YearCalendar:
         """Returns the year."""
-        y = self.__date[0]
-        return YearCalendar({y: self.calendar.caldict[y]})
+        return self.calendar.get_year(self.__date[0])
 
     @property
     def month(self) -> MonthCalendar:
