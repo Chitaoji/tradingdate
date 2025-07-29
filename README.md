@@ -59,6 +59,7 @@ This project falls under the BSD 3-Clause License.
 ## History
 ### v0.0.1
 * New methods `TradingCalendar.get_year()`, `YearCalendar.get_month()`, `MonthCalendar.get_day()`.
+* Bugfix: `TradingDate.__sub__()`.
 
 ### v0.0.0
 * Initial release.
