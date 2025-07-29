@@ -29,7 +29,7 @@ def tradedate(
     date: int | str,
     /,
     calendar_id: str = "chinese",
-    not_exist: Literal["use_next", "use_last", "raise"] = "get_last",
+    missing: Literal["use_next", "use_last", "raise"] = "use_last",
 ) -> "TradeDate":
     """
     Returns a `TradeDate` object.
@@ -40,7 +40,7 @@ def tradedate(
         The date.
     calendar_id : str, optional
         Calendar id, by default "chinese".
-    not_exist : Literal["use_next", "use_last"], optional
+    missing : Literal["use_next", "use_last", "raise"], optional
         Used when `date` is not found in the calendar. If "use_next",
         return the nearest trade date after `date`; if "use_last",
         return the nearest trade date before it; if "raise", raise
@@ -54,7 +54,7 @@ def tradedate(
     """
 
     calendar = get_calendar(calendar_id)
-    match not_exist:
+    match missing:
         case "use_next":
             return calendar.get_nearest_date_after(date)
         case "use_last":
