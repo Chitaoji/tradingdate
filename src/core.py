@@ -215,9 +215,10 @@ class TradingCalendar:
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
 
-    def get_year(self, year: int) -> "YearCalendar":
+    def get_year(self, year: int | str) -> "YearCalendar":
         """Returns a year calendar."""
-        return YearCalendar({year: self.caldict[year]})
+        y = int(year)
+        return YearCalendar({y: self.caldict[y]})
 
 
 class YearCalendar(TradingCalendar):
@@ -259,10 +260,11 @@ class YearCalendar(TradingCalendar):
         """
         return str(self.asint())
 
-    def get_month(self, month: int) -> "MonthCalendar":
+    def get_month(self, month: int | str) -> "MonthCalendar":
         """Returns a month calendar."""
         y = self.asint()
-        return MonthCalendar({y: {month: self.caldict[y][month]}})
+        m = int(month)
+        return MonthCalendar({y: {m: self.caldict[y][m]}})
 
 
 class MonthCalendar(TradingCalendar):
@@ -304,13 +306,14 @@ class MonthCalendar(TradingCalendar):
         """
         return f"{self.asint():02}"
 
-    def get_day(self, day: int) -> "DayCalendar":
+    def get_day(self, day: int | str) -> "DayCalendar":
         """Returns a day calendar."""
         y = list(self.caldict)[0]
         m = self.asint()
-        if day not in self.caldict[y][m]:
-            raise KeyError(day)
-        return DayCalendar({y: {m: [day]}})
+        d = int(day)
+        if d not in self.caldict[y][m]:
+            raise KeyError(d)
+        return DayCalendar({y: {m: [d]}})
 
 
 class DayCalendar(TradingCalendar):
@@ -414,7 +417,7 @@ class TradingDate:
             d = month[idx - value]
             return self.__class__(y, m, d, calendar=self.calendar)
         value -= idx + 1
-        return self.calendar.get_nearest_date_before(f"{y}{m - 1:02}31") + value
+        return self.calendar.get_nearest_date_before(f"{y}{m - 1:02}31") - value
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.asstr()})"
@@ -464,7 +467,8 @@ class TradingDate:
     @property
     def year(self) -> YearCalendar:
         """Returns the year."""
-        return self.calendar.get_year(self.__date[0])
+        y = self.__date[0]
+        return YearCalendar({y: self.calendar.caldict[y]})
 
     @property
     def month(self) -> MonthCalendar:
