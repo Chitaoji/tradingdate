@@ -185,6 +185,8 @@ class TradingCalendar:
             if m >= 12:
                 return self.get_nearest_date_after(f"{y + 1}0101")
             return self.get_nearest_date_after(f"{y}{m + 1:02}01")
+        if y < max(self.caldict):
+            return self.get_nearest_date_after(f"{y + 1}0101")
         raise OutOfCalendarError(
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
@@ -204,6 +206,8 @@ class TradingCalendar:
             if m <= 1:
                 return self.get_nearest_date_before(f"{y - 1}1231")
             return self.get_nearest_date_before(f"{y}{m - 1:02}31")
+        if y > min(self.caldict):
+            return self.get_nearest_date_before(f"{y - 1}1231")
         raise OutOfCalendarError(
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
@@ -374,8 +378,7 @@ class TradeDate:
 
     def __add__(self, value: int, /) -> Self:
         y, m, d = split_date(self.asstr())
-        year = self.calendar.caldict[y]
-        month = year[m]
+        month = self.calendar.caldict[y][m]
         idx = month.index(d)
         if idx + value < len(month):
             d = month[idx + value]
@@ -385,10 +388,9 @@ class TradeDate:
 
     def __sub__(self, value: int, /) -> Self:
         y, m, d = split_date(self.asstr())
-        year = self.calendar.caldict[y]
-        month = year[m]
+        month = self.calendar.caldict[y][m]
         idx = month.index(d)
-        if idx - value >= 0:
+        if idx >= value:
             d = month[idx - value]
             return self.__class__(y, m, d, calendar=self.calendar)
         value -= idx + 1
