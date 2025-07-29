@@ -1,8 +1,8 @@
 """
-Contains the core of tradedate: tradedate(), get_calendar(), etc.
+Contains the core of tradingdate: get_trading_date(), get_calendar(), etc.
 
 NOTE: this module is private. All functions and objects are available in the main
-`tradedate` namespace - use that instead.
+`tradingdate` namespace - use that instead.
 
 """
 
@@ -17,22 +17,22 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "tradedate",
-    "get_tradedates",
+    "get_trading_date",
+    "get_trading_dates",
     "get_calendar",
-    "TradeDate",
+    "TradingDate",
     "TradingCalendar",
 ]
 
 
-def tradedate(
+def get_trading_date(
     date: int | str,
     /,
     calendar_id: str = "chinese",
     missing: Literal["use_next", "use_last", "raise"] = "use_last",
-) -> "TradeDate":
+) -> "TradingDate":
     """
-    Returns a `TradeDate` object.
+    Returns a `TradingDate` object.
 
     Parameters
     ----------
@@ -48,7 +48,7 @@ def tradedate(
 
     Returns
     -------
-    TradeDate
+    TradingDate
         Trade date.
 
     """
@@ -65,11 +65,11 @@ def tradedate(
             raise ValueError(f"invalid value for argument 'not_exist': {x!r}")
 
 
-def get_tradedates(
+def get_trading_dates(
     start: int | str | None = None,
     end: int | str | None = None,
     calendar_id: str = "chinese",
-) -> Iterator["TradeDate"]:
+) -> Iterator["TradingDate"]:
     """
     Returns an iterator of trade dates between `start` and `end`
     (including `start` and `end`).
@@ -85,7 +85,7 @@ def get_tradedates(
 
     Returns
     -------
-    Iterator[TradeDate]
+    Iterator[TradingDate]
         Iterator of trade dates.
 
     """
@@ -145,35 +145,35 @@ class TradingCalendar:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.start} ~ {self.end})"
 
-    def __contains__(self, value: "TradeDate | int | str") -> bool:
+    def __contains__(self, value: "TradingDate | int | str") -> bool:
         y, m, d = split_date(value)
         return y in self.caldict and m in self.caldict[y] and d in self.caldict[y][m]
 
-    def __iter__(self) -> Iterator["TradeDate"]:
+    def __iter__(self) -> Iterator["TradingDate"]:
         return (
-            TradeDate(y, m, d, calendar=self)
+            TradingDate(y, m, d, calendar=self)
             for y in self.caldict
             for m in self.caldict[y]
             for d in self.caldict[y][m]
         )
 
     @property
-    def start(self) -> "TradeDate":
+    def start(self) -> "TradingDate":
         """Return the starting date of the calendar."""
         y = min(self.caldict)
         m = min(self.caldict[y])
         d = self.caldict[y][m][0]
-        return TradeDate(y, m, d, calendar=self)
+        return TradingDate(y, m, d, calendar=self)
 
     @property
-    def end(self) -> "TradeDate":
+    def end(self) -> "TradingDate":
         """Return the ending date of the calendar."""
         y = max(self.caldict)
         m = max(self.caldict[y])
         d = self.caldict[y][m][-1]
-        return TradeDate(y, m, d, calendar=self)
+        return TradingDate(y, m, d, calendar=self)
 
-    def get_nearest_date_after(self, date: int | str) -> "TradeDate":
+    def get_nearest_date_after(self, date: int | str) -> "TradingDate":
         """Get the nearest date after the date (including itself)."""
         y, m, d = split_date(date)
         if y in self.caldict:
@@ -181,10 +181,10 @@ class TradingCalendar:
             if m in year:
                 month = year[m]
                 if d in month:
-                    return TradeDate(y, m, d, calendar=self)
+                    return TradingDate(y, m, d, calendar=self)
                 if d <= month[-1]:
                     new_d = month[np.argmax(np.array(month) >= d)]
-                    return TradeDate(y, m, new_d, calendar=self)
+                    return TradingDate(y, m, new_d, calendar=self)
             if m >= 12:
                 return self.get_nearest_date_after(f"{y + 1}0101")
             return self.get_nearest_date_after(f"{y}{m + 1:02}01")
@@ -194,7 +194,7 @@ class TradingCalendar:
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
 
-    def get_nearest_date_before(self, date: int | str) -> "TradeDate":
+    def get_nearest_date_before(self, date: int | str) -> "TradingDate":
         """Get the nearest date before the date (including itself)."""
         y, m, d = split_date(date)
         if y in self.caldict:
@@ -202,10 +202,10 @@ class TradingCalendar:
             if m in year:
                 month = year[m]
                 if d in month:
-                    return TradeDate(y, m, d, calendar=self)
+                    return TradingDate(y, m, d, calendar=self)
                 if d >= month[0]:
                     new_d = month[np.argmin(np.array(month) <= d) - 1]
-                    return TradeDate(y, m, new_d, calendar=self)
+                    return TradingDate(y, m, new_d, calendar=self)
             if m <= 1:
                 return self.get_nearest_date_before(f"{y - 1}1231")
             return self.get_nearest_date_before(f"{y}{m - 1:02}31")
@@ -339,7 +339,7 @@ class DayCalendar(TradingCalendar):
         return f"{self.asint():02}"
 
 
-class TradeDate:
+class TradingDate:
     """
     Represents a trade date on a specified trading calendar.
 
@@ -463,7 +463,7 @@ class TradeDate:
         return DayCalendar({y: {m: [d]}})
 
 
-def split_date(date: TradeDate | int | str) -> tuple[int, int, int]:
+def split_date(date: TradingDate | int | str) -> tuple[int, int, int]:
     """Split date to int numbers: year, month, and day."""
     datestr = str(date)
     return int(datestr[:4]), int(datestr[4:6]), int(datestr[6:])

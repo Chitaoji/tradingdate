@@ -2,7 +2,7 @@
 Provides the tool for getting calendars: CalendarEngine.
 
 NOTE: this module is private. All functions and objects are available in the main
-`tradedate` namespace - use that instead.
+`tradingdate` namespace - use that instead.
 
 """
 
