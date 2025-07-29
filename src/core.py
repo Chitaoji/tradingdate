@@ -215,6 +215,11 @@ class TradingCalendar:
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
 
+    def get_year(self, year: int | str) -> "YearCalendar":
+        """Returns a year calendar."""
+        y = int(year)
+        return YearCalendar({y: self.caldict[y]})
+
 
 class YearCalendar(TradingCalendar):
     """Trading year."""
@@ -255,6 +260,12 @@ class YearCalendar(TradingCalendar):
         """
         return str(self.asint())
 
+    def get_month(self, month: int | str) -> "MonthCalendar":
+        """Returns a month calendar."""
+        y = self.asint()
+        m = int(month)
+        return MonthCalendar({y: {m: self.caldict[y][m]}})
+
 
 class MonthCalendar(TradingCalendar):
     """Trading month."""
@@ -294,6 +305,15 @@ class MonthCalendar(TradingCalendar):
 
         """
         return f"{self.asint():02}"
+
+    def get_day(self, day: int | str) -> "DayCalendar":
+        """Returns a day calendar."""
+        y = list(self.caldict)[0]
+        m = self.asint()
+        d = int(day)
+        if d not in self.caldict[y][m]:
+            raise KeyError(d)
+        return DayCalendar({y: {m: [d]}})
 
 
 class DayCalendar(TradingCalendar):
@@ -397,7 +417,7 @@ class TradingDate:
             d = month[idx - value]
             return self.__class__(y, m, d, calendar=self.calendar)
         value -= idx + 1
-        return self.calendar.get_nearest_date_before(f"{y}{m - 1:02}31") + value
+        return self.calendar.get_nearest_date_before(f"{y}{m - 1:02}31") - value
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.asstr()})"
