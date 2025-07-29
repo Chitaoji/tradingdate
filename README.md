@@ -1,25 +1,26 @@
-# *auto-generated*
+# tradedate
 Manages trade dates.
 
 ## Installation
 ```sh
-*auto-generated*
+$ pip install tradedate
 ```
 
 ## Requirements
 ```txt
-*auto-generated*
+chinesecalendar
+numpy
 ```
 
 ## See Also
 ### Github repository
-* *auto-generated*
+* https://github.com/Chitaoji/$package/
 
 ### PyPI project
-* *auto-generated*
+* https://pypi.org/project/tradedate/
 
 ## License
-*auto-generated*
+This project falls under the BSD 3-Clause License.
 
 ## History
 ### v0.0.0

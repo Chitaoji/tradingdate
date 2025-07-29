@@ -1,14 +1,13 @@
 """
-# $package
-A template repository for building python packages. Please replace `$package` with the package's
-name.
+# tradedate
+Manages trade dates.
 
 ## See Also
 ### Github repository
 * https://github.com/Chitaoji/$package/
 
 ### PyPI project
-* https://pypi.org/project/$package/
+* https://pypi.org/project/tradedate/
 
 ## License
 This project falls under the BSD 3-Clause License.
