@@ -29,7 +29,7 @@ def tradedate(
     date: int | str,
     /,
     calendar_id: str = "chinese",
-    not_exist: Literal["forward", "backward"] = "backward",
+    not_exist: Literal["use_next", "use_last", "raise"] = "get_last",
 ) -> "TradeDate":
     """
     Returns a `TradeDate` object.
@@ -40,10 +40,11 @@ def tradedate(
         The date.
     calendar_id : str, optional
         Calendar id, by default "chinese".
-    not_exist : Literal["forward", "backward"], optional
-        Used when `date` is not found in the calendar. If "forward", return
-        the nearest trade date after `date`; if "backward", return the nearest
-        trade date before it. By default "backward".
+    not_exist : Literal["use_next", "use_last"], optional
+        Used when `date` is not found in the calendar. If "use_next",
+        return the nearest trade date after `date`; if "use_last",
+        return the nearest trade date before it; if "raise", raise
+        error. By default "use_last".
 
     Returns
     -------
@@ -54,10 +55,12 @@ def tradedate(
 
     calendar = get_calendar(calendar_id)
     match not_exist:
-        case "forward":
+        case "use_next":
             return calendar.get_nearest_date_after(date)
-        case "backward":
+        case "use_last":
             return calendar.get_nearest_date_before(date)
+        case "raise":
+            raise NotOnCalendarError(f"date {date} is not on the calendar")
         case _ as x:
             raise ValueError(f"invalid value for argument 'not_exist': {x!r}")
 
@@ -464,6 +467,10 @@ def split_date(date: TradeDate | int | str) -> tuple[int, int, int]:
     """Split date to int numbers: year, month, and day."""
     datestr = str(date)
     return int(datestr[:4]), int(datestr[4:6]), int(datestr[6:])
+
+
+class NotOnCalendarError(Exception):
+    """Raised when date is not on the calendar."""
 
 
 class OutOfCalendarError(Exception):
