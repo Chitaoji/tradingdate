@@ -114,7 +114,7 @@ def get_calendar(calendar_id: str = "chinese", /) -> "TradingCalendar":
         case "chinese":
             cal = CalendarEngine().get_chinese_calendar()
         case _ as x:
-            raise ValueError(f"invalid calendar_id: {x}")
+            raise ValueError(f"invalid calendar_id: {x!r}")
     return TradingCalendar(cal)
 
 
