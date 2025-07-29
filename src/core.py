@@ -377,14 +377,13 @@ class TradeDate:
             d = month[idx + value]
             return self.__class__(y, m, d, calendar=self.calendar)
         value -= len(month) - idx
-        if m + 1 in year:
-            d = year[m + 1][0]
-            return self.__class__(y, m + 1, d, calendar=self.calendar) + value
+        if m < 12:
+            m += 1
+            return self.__class__(y, m, year[m][0], calendar=self.calendar) + value
         if y + 1 in self.calendar.caldict:
-            year = self.calendar.caldict[y + 1]
-            m = min(year)
-            d = year[m][0]
-            return self.__class__(y + 1, m, d, calendar=self.calendar) + value
+            y += 1
+            d = self.calendar.caldict[y][1][0]
+            return self.__class__(y, 1, d, calendar=self.calendar) + value
         raise OutOfCalendarError(
             f"result is out of range " f"[{self.calendar.start}, {self.calendar.end}]"
         )
@@ -394,18 +393,17 @@ class TradeDate:
         year = self.calendar.caldict[y]
         month = year[m]
         idx = month.index(d)
-        if idx - value >= 0:
+        if idx >= value:
             d = month[idx - value]
             return self.__class__(y, m, d, calendar=self.calendar)
         value -= idx + 1
-        if m - 1 in year:
-            d = year[m - 1][-1]
-            return self.__class__(y, m - 1, d, calendar=self.calendar) - value
+        if m > 2:
+            m -= 1
+            return self.__class__(y, m, year[m][-1], calendar=self.calendar) - value
         if y - 1 in self.calendar.caldict:
-            year = self.calendar.caldict[y - 1]
-            m = max(year)
-            d = year[m][-1]
-            return self.__class__(y - 1, m, d, calendar=self.calendar) - value
+            y -= 1
+            d = self.calendar.caldict[y][12][-1]
+            return self.__class__(y, 12, d, calendar=self.calendar) - value
         raise OutOfCalendarError(
             f"result is out of range [{self.calendar.start}, {self.calendar.end}]"
         )
