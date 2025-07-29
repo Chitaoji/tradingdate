@@ -18,7 +18,14 @@ __all__ = ["CalendarEngine"]
 
 
 class CalendarEngine:
-    """Calendar engine."""
+    """
+    Calendar engine.
+
+    Output should be dicts formatted by `{yyyy: {mm: [dd, ...]}}`.
+    The year numbers should be consecutive and every year should have
+    12 months (lists of days can be empty). The numbers are sorted.
+
+    """
 
     calendar_cache: dict[str, "CalendarDict"] = {}
 
@@ -36,9 +43,14 @@ class CalendarEngine:
                         y, m, d = x.year, x.month, x.day
                         cal[y][m].append(d)
                     else:
+                        if x.month > m + 1:
+                            cal[y].update({mm: [] for mm in range(m + 1, x.month)})
                         y, m, d = x.year, x.month, x.day
                         cal[y][m] = [d]
                 else:
+                    if x.year > y + 1:
+                        for yy in range(y + 1, x.year):
+                            cal[yy].update({mm: [] for mm in range(1, 13)})
                     y, m, d = x.year, x.month, x.day
                     cal[y] = {}
                     cal[y][m] = [d]

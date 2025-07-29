@@ -126,17 +126,18 @@ class TradingCalendar:
 
     Parameters
     ----------
-    calendar : CalendarDict
-        Calendar dict, must be sorted.
+    caldict : CalendarDict
+        Calendar dict formatted by `{yyyy: {mm: [dd, ...]}}`, must be
+        sorted.
 
     """
 
     __slots__ = ["caldict"]
 
-    def __init__(self, calendar: "CalendarDict", /) -> None:
-        if not calendar:
+    def __init__(self, caldict: "CalendarDict", /) -> None:
+        if not caldict:
             raise ValueError("empty calendar")
-        self.caldict = calendar
+        self.caldict = caldict
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.start} ~ {self.end})"
@@ -173,16 +174,15 @@ class TradingCalendar:
         """Get the nearest date after the date (including itself)."""
         y, m, d = split_date(date)
         if y in self.caldict:
-            year = self.caldict[y]
-            if m in year:
-                month = year[m]
-                if d in month:
-                    return TradeDate(y, m, d, calendar=self)
-                if d <= month[-1]:
-                    new_d = month[np.argmax(np.array(month) >= d)]
-                    return TradeDate(y, m, new_d, calendar=self)
-                return self.get_nearest_date_after(f"{y}{m+1:02}01")
-            return self.get_nearest_date_after(f"{y+1}0101")
+            month = self.caldict[y][m]
+            if d in month:
+                return TradeDate(y, m, d, calendar=self)
+            if d <= month[-1]:
+                new_d = month[np.argmax(np.array(month) >= d)]
+                return TradeDate(y, m, new_d, calendar=self)
+            if m < 12:
+                return self.get_nearest_date_after(f"{y}{m + 1:02}01")
+            return self.get_nearest_date_after(f"{y + 1}0101")
         raise OutOfCalendarError(
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
@@ -191,16 +191,15 @@ class TradingCalendar:
         """Get the nearest date before the date (including itself)."""
         y, m, d = split_date(date)
         if y in self.caldict:
-            year = self.caldict[y]
-            if m in year:
-                month = year[m]
-                if d in month:
-                    return TradeDate(y, m, d, calendar=self)
-                if d >= month[0]:
-                    new_d = month[np.argmin(np.array(month) <= d) - 1]
-                    return TradeDate(y, m, new_d, calendar=self)
-                return self.get_nearest_date_before(f"{y}{m-1:02}31")
-            return self.get_nearest_date_before(f"{y-1}1231")
+            month = self.caldict[y][m]
+            if d in month:
+                return TradeDate(y, m, d, calendar=self)
+            if d >= month[0]:
+                new_d = month[np.argmin(np.array(month) <= d) - 1]
+                return TradeDate(y, m, new_d, calendar=self)
+            if m > 1:
+                return self.get_nearest_date_before(f"{y}{m - 1:02}31")
+            return self.get_nearest_date_before(f"{y - 1}1231")
         raise OutOfCalendarError(
             f"date {date} is out of range [{self.start}, {self.end}]"
         )
