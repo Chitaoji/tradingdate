@@ -33,16 +33,24 @@ class CalendarEngine:
         if "chinese" not in self.__calendar_cache:
             y, m, d = 2004, 1, 1
             cal: "CalendarDict" = {y: {m: []}}
-            for x in chinese_calendar.get_workdays(
-                datetime.date(y, m, d),
-                datetime.date(datetime.datetime.now().year, 12, 31),
-            ):
+            try:
+                workdays = chinese_calendar.get_workdays(
+                    datetime.date(y, m, d),
+                    datetime.date(datetime.datetime.now().year, 12, 31),
+                )
+            except NotImplementedError as e:
+                e.add_note(
+                    "please try 'pip install --upgrade chinesecalendar' in the "
+                    "console"
+                )
+                raise e
+            for x in workdays:
                 if x.year == y:
                     if x.month == m:
-                        y, m, d = x.year, x.month, x.day
+                        d = x.day
                         cal[y][m].append(d)
                     else:
-                        y, m, d = x.year, x.month, x.day
+                        m, d = x.month, x.day
                         cal[y][m] = [d]
                 else:
                     y, m, d = x.year, x.month, x.day
@@ -62,18 +70,18 @@ class CalendarEngine:
             yy, mm, dd = int(datestr[:-4]), int(datestr[-4:-2]), int(datestr[-2:])
             if yy == y:
                 if mm == m:
-                    y, m, d = yy, mm, dd
+                    self.__check_day(d := dd)
                     cal[y][m].append(d)
                 else:
-                    y, m, d = yy, mm, dd
+                    self.__check_month(m := mm)
+                    self.__check_day(d := dd)
                     cal[y][m] = [d]
             else:
-                y, m, d = yy, mm, dd
+                self.__check_year(y := yy)
+                self.__check_month(m := mm)
+                self.__check_day(d := dd)
                 cal[y] = {}
                 cal[y][m] = [d]
-            self.__check_year(y)
-            self.__check_month(m)
-            self.__check_day(d)
         self.__calendar_cache[calendar_id] = cal
 
     def get_calendar(self, calendar_id: str) -> "CalendarDict":

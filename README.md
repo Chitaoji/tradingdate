@@ -63,6 +63,10 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.4
+* Improved effeciency when making a calendar.
+* Updated message of `NotImplementedError` raised by `CalendarEngine.get_chinese_calendar()`.
+
 ### v0.0.3
 * Updated `make_calendar()`: now accepts a date-list as the second positional argument instead of a dict.
 
