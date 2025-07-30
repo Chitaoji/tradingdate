@@ -33,10 +33,18 @@ class CalendarEngine:
         if "chinese" not in self.__calendar_cache:
             y, m, d = 2004, 1, 1
             cal: "CalendarDict" = {y: {m: []}}
-            for x in chinese_calendar.get_workdays(
-                datetime.date(y, m, d),
-                datetime.date(datetime.datetime.now().year, 12, 31),
-            ):
+            try:
+                workdays = chinese_calendar.get_workdays(
+                    datetime.date(y, m, d),
+                    datetime.date(datetime.datetime.now().year, 12, 31),
+                )
+            except NotImplementedError as e:
+                e.add_note(
+                    "please try 'pip install --upgrade chinesecalendar' in the "
+                    "console"
+                )
+                raise e
+            for x in workdays:
                 if x.year == y:
                     if x.month == m:
                         d = x.day
