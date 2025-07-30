@@ -53,8 +53,36 @@ class CalendarEngine:
 
     def register_calendar(self, calendar_id: str, caldict: "CalendarDict") -> None:
         """Register a calendar."""
-        self.__calendar_cache[calendar_id] = caldict
+        new_dict: "CalendarDict" = {}
+        for y in caldict:
+            self.__check_year(y)
+            new_ydict: dict[int, list[int]] = {}
+            for m in (ydict := caldict[y]):
+                self.__check_month(m)
+                if mlist := ydict[m]:
+                    for d in mlist:
+                        self.__check_day(d)
+                    new_ydict[m] = sorted(set(mlist))
+            if new_ydict:
+                new_dict[y] = dict(sorted(new_ydict.items()))
+        self.__calendar_cache[calendar_id] = dict(sorted(new_dict.items()))
 
     def get_calendar(self, calendar_id: str) -> "CalendarDict":
         """Get a calendar."""
         return self.__calendar_cache[calendar_id]
+
+    def __check_year(self, year: int) -> None:
+        if not isinstance(year, int):
+            raise TypeError(f"expected int, got {type(year).__name__} instead")
+
+    def __check_month(self, month: int) -> None:
+        if not isinstance(month, int):
+            raise TypeError(f"expected int, got {type(month).__name__} instead")
+        if not 1 <= month <= 12:
+            raise ValueError(f"invalid month number: {month}")
+
+    def __check_day(self, day: int) -> None:
+        if not isinstance(day, int):
+            raise TypeError(f"expected int, got {type(day).__name__} instead")
+        if not 1 <= day <= 31:
+            raise ValueError(f"invalid day number: {day}")

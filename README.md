@@ -12,12 +12,12 @@ chinesecalendar
 numpy
 ```
 ## Usage
-### Get the calendar
+### Get a calendar
 ```py
 >>> import tradingdate as td
 >>> cal = td.get_calendar("chinese") # by default "chinese"
 >>> cal
-TradingCalendar(20040102 ~ 20251231)
+TradingCalendar(20040102 ~ 20251231, 'chinese')
 >>> list(cal)[:3]
 [TradingDate(20040102), TradingDate(20040105), TradingDate(20040106)]
 ```
@@ -45,6 +45,13 @@ TradingDate(20250617)
 [TradingDate(20250102), TradingDate(20250103), TradingDate(20250106)]
 ```
 
+### Make a new calendar
+```py
+>>> td.make_calendar("user-defined", {2025: {1: [1, 11, 21], 2: [1, 11, 21]}})
+TradingCalendar(20250101 ~ 20250221, 'user-defined')
+>>> list(td.get_trading_dates(20250101, 20250131, calendar_id="user-defined"))
+[TradingDate(20250101), TradingDate(20250111), TradingDate(20250121)]
+```
 
 ## See Also
 ### Github repository
