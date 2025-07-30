@@ -57,6 +57,9 @@ TradingDate(20250617)
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.2
+* Removed the dependency on `numpy`.
+
 ### v0.0.1
 * New methods `TradingCalendar.get_year()`, `YearCalendar.get_month()`, `MonthCalendar.get_day()`.
 * Bugfix: `TradingDate.__sub__()`.

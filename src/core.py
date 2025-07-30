@@ -95,7 +95,7 @@ def get_trading_dates(
     return (x for x in calendar if start <= x.asint() <= end)
 
 
-def get_calendar(calendar_id: str = "chinese", /) -> "TradingCalendar":
+def get_calendar(calendar_id: str = "chinese") -> "TradingCalendar":
     """
     Returns a `TradingCalendar` object.
 
@@ -110,12 +110,35 @@ def get_calendar(calendar_id: str = "chinese", /) -> "TradingCalendar":
         Calendar.
 
     """
+    engine = CalendarEngine()
     match calendar_id:
         case "chinese":
-            cal = CalendarEngine().get_chinese_calendar()
+            cal = engine.get_chinese_calendar()
         case _ as x:
-            raise ValueError(f"invalid calendar_id: {x!r}")
+            cal = engine.get_calendar(x)
     return TradingCalendar(cal)
+
+
+def make_calendar(calendar_id: str, caldict: "CalendarDict") -> "TradingCalendar":
+    """
+    Make a new calendar.
+
+    Parameters
+    ----------
+    calendar_id : str
+        Calendar id.
+    caldict : CalendarDict
+        Calendar dict formatted by `{yyyy: {mm: [dd, ...]}}`.
+
+    Returns
+    -------
+    TradingCalendar
+        Calendar.
+
+    """
+    engine = CalendarEngine()
+    engine.register_calendar(calendar_id, caldict)
+    return TradingCalendar(engine.get_calendar(calendar_id))
 
 
 # ==============================================================================
@@ -466,19 +489,19 @@ class TradingDate:
 
     @property
     def year(self) -> YearCalendar:
-        """Returns the year."""
+        """Calendar of the year."""
         y = self.__date[0]
         return YearCalendar({y: self.calendar.caldict[y]})
 
     @property
     def month(self) -> MonthCalendar:
-        """Returns the month."""
+        """Calendar of the month."""
         y, m, _ = self.__date
         return MonthCalendar({y: {m: self.calendar.caldict[y][m]}})
 
     @property
     def day(self) -> DayCalendar:
-        """Returns the day."""
+        """Calendar of the day."""
         y, m, d = self.__date
         return DayCalendar({y: {m: [d]}})
 

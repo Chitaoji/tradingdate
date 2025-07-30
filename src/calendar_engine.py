@@ -26,11 +26,11 @@ class CalendarEngine:
 
     """
 
-    calendar_cache: dict[str, "CalendarDict"] = {}
+    __calendar_cache: dict[str, "CalendarDict"] = {}
 
     def get_chinese_calendar(self) -> "CalendarDict":
         """Get the chinese calendar."""
-        if "chinese" not in self.__class__.calendar_cache:
+        if "chinese" not in self.__calendar_cache:
             y, m, d = 2004, 1, 1
             cal: "CalendarDict" = {y: {m: []}}
             for x in chinese_calendar.get_workdays(
@@ -48,5 +48,13 @@ class CalendarEngine:
                     y, m, d = x.year, x.month, x.day
                     cal[y] = {}
                     cal[y][m] = [d]
-            self.__class__.calendar_cache["chinese"] = cal
-        return self.__class__.calendar_cache["chinese"]
+            self.__calendar_cache["chinese"] = cal
+        return self.__calendar_cache["chinese"]
+
+    def register_calendar(self, calendar_id: str, caldict: "CalendarDict") -> None:
+        """Register a calendar."""
+        self.__calendar_cache[calendar_id] = caldict
+
+    def get_calendar(self, calendar_id: str) -> "CalendarDict":
+        """Get a calendar."""
+        return self.__calendar_cache[calendar_id]
