@@ -350,7 +350,7 @@ class DayCalendar(TradingCalendar):
     def __repr__(self) -> str:
         y = list(self.cache)[0]
         m = list(list(self.cache.values())[0])[0]
-        return f"{self.__class__.__name__}({y}{m:02}{self.asint():02}), {self.id!r}"
+        return f"{self.__class__.__name__}({y}{m:02}{self.asint():02}, {self.id!r})"
 
     def __str__(self) -> str:
         return self.asstr()
