@@ -8,8 +8,6 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 from typing import TYPE_CHECKING, Iterator, Literal, Self
 
-import numpy as np
-
 from .calendar_engine import CalendarEngine
 
 if TYPE_CHECKING:
@@ -208,8 +206,10 @@ class TradingCalendar:
                 if d in mlist:
                     return TradingDate(y, m, d, calendar=self)
                 if d <= mlist[-1]:
-                    new_d = mlist[np.argmax(np.array(mlist) >= d)]
-                    return TradingDate(y, m, new_d, calendar=self)
+                    for dd in mlist:
+                        if dd >= d:
+                            return TradingDate(y, m, dd, calendar=self)
+                    raise RuntimeError("unexpected runtime behavior")
             if m >= 12:
                 return self.get_nearest_date_after(f"{y + 1}0101")
             return self.get_nearest_date_after(f"{y}{m + 1:02}01")
@@ -229,8 +229,10 @@ class TradingCalendar:
                 if d in mlist:
                     return TradingDate(y, m, d, calendar=self)
                 if d >= mlist[0]:
-                    new_d = mlist[np.argmin(np.array(mlist) <= d) - 1]
-                    return TradingDate(y, m, new_d, calendar=self)
+                    for dd in reversed(mlist):
+                        if dd <= d:
+                            return TradingDate(y, m, dd, calendar=self)
+                    raise RuntimeError("unexpected runtime behavior")
             if m <= 1:
                 return self.get_nearest_date_before(f"{y - 1}1231")
             return self.get_nearest_date_before(f"{y}{m - 1:02}31")
