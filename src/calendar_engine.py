@@ -26,11 +26,11 @@ class CalendarEngine:
 
     """
 
-    calendar_cache: dict[str, "CalendarDict"] = {}
+    __calendar_cache: dict[str, "CalendarDict"] = {}
 
     def get_chinese_calendar(self) -> "CalendarDict":
         """Get the chinese calendar."""
-        if "chinese" not in self.__class__.calendar_cache:
+        if "chinese" not in self.__calendar_cache:
             y, m, d = 2004, 1, 1
             cal: "CalendarDict" = {y: {m: []}}
             for x in chinese_calendar.get_workdays(
@@ -48,5 +48,41 @@ class CalendarEngine:
                     y, m, d = x.year, x.month, x.day
                     cal[y] = {}
                     cal[y][m] = [d]
-            self.__class__.calendar_cache["chinese"] = cal
-        return self.__class__.calendar_cache["chinese"]
+            self.__calendar_cache["chinese"] = cal
+        return self.__calendar_cache["chinese"]
+
+    def register_calendar(self, calendar_id: str, caldict: "CalendarDict") -> None:
+        """Register a calendar."""
+        new_dict: "CalendarDict" = {}
+        for y in caldict:
+            self.__check_year(y)
+            new_ydict: dict[int, list[int]] = {}
+            for m in (ydict := caldict[y]):
+                self.__check_month(m)
+                if mlist := ydict[m]:
+                    for d in mlist:
+                        self.__check_day(d)
+                    new_ydict[m] = sorted(set(mlist))
+            if new_ydict:
+                new_dict[y] = dict(sorted(new_ydict.items()))
+        self.__calendar_cache[calendar_id] = dict(sorted(new_dict.items()))
+
+    def get_calendar(self, calendar_id: str) -> "CalendarDict":
+        """Get a calendar."""
+        return self.__calendar_cache[calendar_id]
+
+    def __check_year(self, year: int) -> None:
+        if not isinstance(year, int):
+            raise TypeError(f"expected int, got {type(year).__name__} instead")
+
+    def __check_month(self, month: int) -> None:
+        if not isinstance(month, int):
+            raise TypeError(f"expected int, got {type(month).__name__} instead")
+        if not 1 <= month <= 12:
+            raise ValueError(f"invalid month number: {month}")
+
+    def __check_day(self, day: int) -> None:
+        if not isinstance(day, int):
+            raise TypeError(f"expected int, got {type(day).__name__} instead")
+        if not 1 <= day <= 31:
+            raise ValueError(f"invalid day number: {day}")
