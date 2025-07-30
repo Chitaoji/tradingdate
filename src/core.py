@@ -99,7 +99,7 @@ def get_trading_dates(
 
 
 def daterange(
-    start: "TradingDate", stop: "int | str | TradingDate", step: int = 1
+    start: "TradingDate", stop: "TradingDate | int | str", step: int = 1
 ) -> Iterator["TradingDate"]:
     """
     Returns an iterator of trade dates from `start` (inclusive) to
@@ -109,7 +109,7 @@ def daterange(
     ----------
     start : TradingDate
         Start date.
-    end : int | str | TradingDate
+    end : TradingDate | int | str
         End date.
     step : int, optional
         Step, by default 1.
