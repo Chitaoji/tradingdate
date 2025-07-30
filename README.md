@@ -46,10 +46,10 @@ TradingDate(20250617)
 
 ### Make a new calendar
 ```py
->>> td.make_calendar("user-defined", {2025: {1: [1, 11, 21], 2: [1, 11, 21]}})
-TradingCalendar(20250101 ~ 20250221, 'user-defined')
+>>> td.make_calendar("user-defined", [20250101, 20250115, 20250201])
+TradingCalendar(20250101 ~ 20250201, 'user-defined')
 >>> list(td.get_trading_dates(20250101, 20250131, calendar_id="user-defined"))
-[TradingDate(20250101), TradingDate(20250111), TradingDate(20250121)]
+[TradingDate(20250101), TradingDate(20250115)]
 ```
 
 ## See Also
@@ -63,6 +63,9 @@ TradingCalendar(20250101 ~ 20250221, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.3
+* Updated `make_calendar()`: now accepts a date-list as the second positional argument instead of a dict.
+
 ### v0.0.2
 * New function `make_calendar()`.
 * Removed the dependency on `numpy`.

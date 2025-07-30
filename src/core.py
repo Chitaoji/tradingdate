@@ -118,7 +118,7 @@ def get_calendar(calendar_id: str = "chinese") -> "TradingCalendar":
     return TradingCalendar(calendar_id, cal)
 
 
-def make_calendar(calendar_id: str, caldict: "CalendarDict") -> "TradingCalendar":
+def make_calendar(calendar_id: str, date_list: list[int | str]) -> "TradingCalendar":
     """
     Make a new calendar and register it in the engine.
 
@@ -126,8 +126,8 @@ def make_calendar(calendar_id: str, caldict: "CalendarDict") -> "TradingCalendar
     ----------
     calendar_id : str
         Calendar id.
-    caldict : CalendarDict
-        Calendar dict formatted by `{yyyy: {mm: [dd, ...]}}`.
+    date_list : list[int | str]
+        List of dates formatted by `yyyymmdd`.
 
     Returns
     -------
@@ -136,7 +136,7 @@ def make_calendar(calendar_id: str, caldict: "CalendarDict") -> "TradingCalendar
 
     """
     engine = CalendarEngine()
-    engine.register_calendar(calendar_id, caldict)
+    engine.register_calendar(calendar_id, date_list)
     return TradingCalendar(calendar_id, engine.get_calendar(calendar_id))
 
 
@@ -513,7 +513,7 @@ class TradingDate:
 def split_date(date: TradingDate | int | str) -> tuple[int, int, int]:
     """Split date to int numbers: year, month, and day."""
     datestr = str(date)
-    return int(datestr[:-4]), int(datestr[-4:6]), int(datestr[6:])
+    return int(datestr[:-4]), int(datestr[-4:-2]), int(datestr[-2:])
 
 
 class NotOnCalendarError(Exception):
