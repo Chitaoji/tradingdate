@@ -63,6 +63,9 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.6
+* New function `daterange()`.
+
 ### v0.0.5
 * New property `TradingDate.week`.
 

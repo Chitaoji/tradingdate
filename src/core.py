@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 __all__ = [
     "get_trading_date",
     "get_trading_dates",
+    "daterange",
     "get_calendar",
     "make_calendar",
     "TradingDate",
@@ -90,9 +91,53 @@ def get_trading_dates(
 
     """
     calendar = get_calendar(calendar_id)
-    start = calendar.start.asint() if start is None else int(start)
+    date = calendar.start if start is None else calendar.get_nearest_date_after(start)
     end = calendar.end.asint() if end is None else int(end)
-    return (x for x in calendar if start <= x.asint() <= end)
+    while date <= end:
+        yield date
+        date = date.next()
+
+
+def daterange(
+    start: "TradingDate", stop: "TradingDate | int | str", step: int = 1
+) -> Iterator["TradingDate"]:
+    """
+    Returns an iterator of trade dates from `start` (inclusive) to
+    `stop` (exclusive) by `step`.
+
+    Parameters
+    ----------
+    start : TradingDate
+        Start date.
+    end : TradingDate | int | str
+        End date.
+    step : int, optional
+        Step, by default 1.
+
+    Returns
+    -------
+    Iterator[TradingDate]
+        Iterator of trade dates.
+
+    """
+    if step == 1:
+        while start < stop:
+            yield start
+            start = start.next()
+    elif step == -1:
+        while start > stop:
+            yield start
+            start = start.last()
+    elif step == 0:
+        raise ValueError("daterange() arg 3 must not be zero")
+    elif step > 0:
+        while start < stop:
+            yield start
+            start = start + step
+    else:
+        while start > stop:
+            yield start
+            start = start + step
 
 
 def get_calendar(calendar_id: str = "chinese") -> "TradingCalendar":
@@ -469,6 +514,10 @@ class TradingDate:
         return self.asint() <= int(value)
 
     def __add__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            raise TypeError(f"expected int, got {type(value).__name__} instead")
+        if value < 0:
+            return self - abs(value)
         y, m, d = split_date(self.asstr())
         month = self.calendar.cache[y][m]
         idx = month.index(d)
@@ -479,6 +528,10 @@ class TradingDate:
         return self.calendar.get_nearest_date_after(f"{y}{m + 1:02}01") + value
 
     def __sub__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            raise TypeError(f"expected int, got {type(value).__name__} instead")
+        if value < 0:
+            return self + abs(value)
         y, m, d = split_date(self.asstr())
         month = self.calendar.cache[y][m]
         idx = month.index(d)
@@ -502,11 +555,13 @@ class TradingDate:
 
     def next(self) -> Self:
         """Returns the next date."""
-        return self + 1
+        y, m, d = self.__date
+        return self.calendar.get_nearest_date_after(f"{y}{m:02}{d + 1:02}")
 
     def last(self) -> Self:
         """Returns the last date."""
-        return self - 1
+        y, m, d = self.__date
+        return self.calendar.get_nearest_date_before(f"{y}{m:02}{d - 1:02}")
 
     def asint(self) -> int:
         """
