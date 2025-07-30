@@ -65,6 +65,7 @@ This project falls under the BSD 3-Clause License.
 
 ## History
 ### v0.0.2
+* New function `make_calendar()`.
 * Removed the dependency on `numpy`.
 
 ### v0.0.1
