@@ -385,15 +385,6 @@ class WeekCalendar(TradingCalendar):
         """
         return datetime.date(*split_date(self.start)).strftime("%W")
 
-    def get_day(self, day: int | str) -> "DayCalendar":
-        """Returns a day calendar."""
-        y = list(self.cache)[0]
-        m = list(list(self.cache.values()))[0]
-        d = int(day)
-        if d not in self.cache[y][m]:
-            raise KeyError(d)
-        return DayCalendar(self.id, {y: {m: [d]}})
-
 
 class DayCalendar(TradingCalendar):
     """Trading day."""
@@ -559,11 +550,12 @@ class TradingDate:
         """Calendar of the week."""
         w = datetime.date(*self.__date).weekday()
         cal: "CalendarDict" = {}
-        for date in get_trading_dates(
-            self - w, self + (7 - w), calendar_id=self.calendar.id
-        ):
-            if date in self.calendar:
-                y, m, d = split_date(date)
+        for date in [
+            datetime.date(*self.__date) + datetime.timedelta(days=x)
+            for x in range(-w, 7 - w)
+        ]:
+            y, m, d = date.year, date.month, date.day
+            if f"{y}{m:02}{d:02}" in self.calendar:
                 if y not in cal:
                     cal[y] = {}
                 if m not in cal[y]:
