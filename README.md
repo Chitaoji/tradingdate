@@ -9,7 +9,6 @@ $ pip install tradingdate
 ## Requirements
 ```txt
 chinesecalendar
-numpy
 ```
 ## Usage
 ### Get a calendar
