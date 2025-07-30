@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import datetime
 from typing import TYPE_CHECKING, Iterator, Literal, Self
 
 from .calendar_engine import CalendarEngine
@@ -344,13 +345,54 @@ class MonthCalendar(TradingCalendar):
         return DayCalendar(self.id, {y: {m: [d]}})
 
 
+class WeekCalendar(TradingCalendar):
+    """Trading week."""
+
+    def __repr__(self) -> str:
+        y = list(self.cache)[0]
+        return f"{self.__class__.__name__}({y} week{self.asstr()}, {self.id!r})"
+
+    def __str__(self) -> str:
+        return self.asstr()
+
+    def __int__(self) -> int:
+        return self.asint()
+
+    def __hash__(self) -> int:
+        return self.asint()
+
+    def asint(self) -> int:
+        """
+        Return an integer number equals to `ww`.
+
+        Returns
+        -------
+        int
+            An integer representing the day.
+
+        """
+        return int(self.asstr())
+
+    def asstr(self) -> str:
+        """
+        Return a string formatted by `ww`.
+
+        Returns
+        -------
+        str
+            A string representing the day.
+
+        """
+        return datetime.date(*split_date(self.start)).strftime("%W")
+
+
 class DayCalendar(TradingCalendar):
     """Trading day."""
 
     def __repr__(self) -> str:
         y = list(self.cache)[0]
         m = list(list(self.cache.values())[0])[0]
-        return f"{self.__class__.__name__}({y}{m:02}{self.asint():02}), {self.id!r}"
+        return f"{self.__class__.__name__}({y}{m:02}{self.asint():02}, {self.id!r})"
 
     def __str__(self) -> str:
         return self.asstr()
@@ -502,6 +544,25 @@ class TradingDate:
         """Calendar of the month."""
         y, m, _ = self.__date
         return MonthCalendar(self.calendar.id, {y: {m: self.calendar.cache[y][m]}})
+
+    @property
+    def week(self) -> WeekCalendar:
+        """Calendar of the week."""
+        w = datetime.date(*self.__date).weekday()
+        cal: "CalendarDict" = {}
+        for date in [
+            datetime.date(*self.__date) + datetime.timedelta(days=x)
+            for x in range(-w, 7 - w)
+        ]:
+            y, m, d = date.year, date.month, date.day
+            if f"{y}{m:02}{d:02}" in self.calendar:
+                if y not in cal:
+                    cal[y] = {}
+                if m not in cal[y]:
+                    cal[y][m] = [d]
+                else:
+                    cal[y][m].append(d)
+        return WeekCalendar(self.calendar.id, cal)
 
     @property
     def day(self) -> DayCalendar:
