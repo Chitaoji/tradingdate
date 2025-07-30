@@ -6,6 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
+import datetime
 from typing import TYPE_CHECKING, Iterator, Literal, Self
 
 from .calendar_engine import CalendarEngine
@@ -344,6 +345,56 @@ class MonthCalendar(TradingCalendar):
         return DayCalendar(self.id, {y: {m: [d]}})
 
 
+class WeekCalendar(TradingCalendar):
+    """Trading week."""
+
+    def __repr__(self) -> str:
+        y = list(self.cache)[0]
+        return f"{self.__class__.__name__}({y} week{self.asstr()}, {self.id!r})"
+
+    def __str__(self) -> str:
+        return self.asstr()
+
+    def __int__(self) -> int:
+        return self.asint()
+
+    def __hash__(self) -> int:
+        return self.asint()
+
+    def asint(self) -> int:
+        """
+        Return an integer number equals to `ww`.
+
+        Returns
+        -------
+        int
+            An integer representing the day.
+
+        """
+        return int(self.asstr())
+
+    def asstr(self) -> str:
+        """
+        Return a string formatted by `ww`.
+
+        Returns
+        -------
+        str
+            A string representing the day.
+
+        """
+        return datetime.date(*split_date(self.start)).strftime("%W")
+
+    def get_day(self, day: int | str) -> "DayCalendar":
+        """Returns a day calendar."""
+        y = list(self.cache)[0]
+        m = list(list(self.cache.values()))[0]
+        d = int(day)
+        if d not in self.cache[y][m]:
+            raise KeyError(d)
+        return DayCalendar(self.id, {y: {m: [d]}})
+
+
 class DayCalendar(TradingCalendar):
     """Trading day."""
 
@@ -502,6 +553,17 @@ class TradingDate:
         """Calendar of the month."""
         y, m, _ = self.__date
         return MonthCalendar(self.calendar.id, {y: {m: self.calendar.cache[y][m]}})
+
+    @property
+    def week(self) -> WeekCalendar:
+        """Calendar of the week."""
+        w = datetime.date(*self.__date).weekday()
+        wlist: list[int] = []
+        for date in get_trading_dates(
+            self - w, self + (7 - w), calendar_id=self.calendar.id
+        ):
+            wlist.append(split_date(date)[-1])
+        return WeekCalendar(self.calendar.id, {y: {m: wlist}})
 
     @property
     def day(self) -> DayCalendar:
