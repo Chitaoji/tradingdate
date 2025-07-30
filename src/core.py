@@ -469,6 +469,8 @@ class TradingDate:
         return self.asint() <= int(value)
 
     def __add__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            raise TypeError(f"expected int, got {type(value).__name__} instead")
         y, m, d = split_date(self.asstr())
         month = self.calendar.cache[y][m]
         idx = month.index(d)
@@ -479,6 +481,8 @@ class TradingDate:
         return self.calendar.get_nearest_date_after(f"{y}{m + 1:02}01") + value
 
     def __sub__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            raise TypeError(f"expected int, got {type(value).__name__} instead")
         y, m, d = split_date(self.asstr())
         month = self.calendar.cache[y][m]
         idx = month.index(d)
@@ -502,11 +506,13 @@ class TradingDate:
 
     def next(self) -> Self:
         """Returns the next date."""
-        return self + 1
+        y, m, d = self.__date
+        return self.calendar.get_nearest_date_after(f"{y}{m:02}{d + 1:02}")
 
     def last(self) -> Self:
         """Returns the last date."""
-        return self - 1
+        y, m, d = self.__date
+        return self.calendar.get_nearest_date_before(f"{y}{m:02}{d - 1:02}")
 
     def asint(self) -> int:
         """
