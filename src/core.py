@@ -558,12 +558,19 @@ class TradingDate:
     def week(self) -> WeekCalendar:
         """Calendar of the week."""
         w = datetime.date(*self.__date).weekday()
-        wlist: list[int] = []
+        cal: "CalendarDict" = {}
         for date in get_trading_dates(
             self - w, self + (7 - w), calendar_id=self.calendar.id
         ):
-            wlist.append(split_date(date)[-1])
-        return WeekCalendar(self.calendar.id, {y: {m: wlist}})
+            if date in self.calendar:
+                y, m, d = split_date(date)
+                if y not in cal:
+                    cal[y] = {}
+                if m not in cal[y]:
+                    cal[y][m] = [d]
+                else:
+                    cal[y][m].append(d)
+        return WeekCalendar(self.calendar.id, cal)
 
     @property
     def day(self) -> DayCalendar:
