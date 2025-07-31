@@ -61,6 +61,8 @@ class CalendarEngine:
 
     def register_calendar(self, calendar_id: str, date_list: list[int | str]) -> None:
         """Register a calendar."""
+        if calendar_id in self.__calendar_cache:
+            raise ValueError("calendar_id already exists")
         datestr_list: list[str] = sorted({str(x) for x in date_list})
         y, m, d = -1, -1, -1
         cal: "CalendarDict" = {}
