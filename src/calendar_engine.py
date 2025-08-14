@@ -13,6 +13,7 @@ import chinese_calendar
 
 if TYPE_CHECKING:
     from ._typing import CalendarDict
+    from .core import TradingCalendar
 
 __all__ = ["CalendarEngine"]
 
@@ -26,9 +27,11 @@ class CalendarEngine:
 
     """
 
-    __calendar_cache: dict[str, "CalendarDict"] = {}
+    __calendar_cache: dict[str, "TradingCalendar"] = {}
 
-    def get_chinese_calendar(self) -> "CalendarDict":
+    def get_chinese_calendar(
+        self, constructor: type["TradingCalendar"]
+    ) -> "TradingCalendar":
         """Get the chinese calendar."""
         if "chinese" not in self.__calendar_cache:
             y, m, d = 2004, 1, 1
@@ -56,10 +59,15 @@ class CalendarEngine:
                     y, m, d = x.year, x.month, x.day
                     cal[y] = {}
                     cal[y][m] = [d]
-            self.__calendar_cache["chinese"] = cal
+            self.__calendar_cache["chinese"] = constructor("chinese", cal)
         return self.__calendar_cache["chinese"]
 
-    def register_calendar(self, calendar_id: str, date_list: list[int | str]) -> None:
+    def register_calendar(
+        self,
+        constructor: type["TradingCalendar"],
+        calendar_id: str,
+        date_list: list[int | str],
+    ) -> None:
         """Register a calendar."""
         if calendar_id in self.__calendar_cache:
             raise ValueError(f"calendar_id already exists: {calendar_id!r}")
@@ -84,9 +92,9 @@ class CalendarEngine:
                 self.__check_day(d := dd)
                 cal[y] = {}
                 cal[y][m] = [d]
-        self.__calendar_cache[calendar_id] = cal
+        self.__calendar_cache[calendar_id] = constructor(calendar_id, cal)
 
-    def get_calendar(self, calendar_id: str) -> "CalendarDict":
+    def get_calendar(self, calendar_id: str) -> "TradingCalendar":
         """Get a calendar."""
         return self.__calendar_cache[calendar_id]
 
