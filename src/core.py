@@ -221,57 +221,47 @@ class TradingCalendar:
     def __eq__(self, value: Self, /) -> bool:
         if value.__class__ is TradingCalendar and self.__class__ is TradingCalendar:
             return self.id == value.id
+        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
+            unsupported_operator("==", self, value)
         if isinstance(value, int):
             value = str(value)
-        elif isinstance(value, self.__class__):
+        elif isinstance(value, TradingCalendar):
             value = str(hash(value))
         return str(hash(self)) == value
 
     def __gt__(self, value: Self | int | str, /) -> bool:
         if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            raise TypeError(
-                f"'>' not supported between instances of {value.__class__.__name__!r} "
-                f"and {self.__class__.__name__!r}"
-            )
+            unsupported_operator(">", self, value)
         if isinstance(value, int):
             value = str(value)
-        elif isinstance(value, self.__class__):
+        elif isinstance(value, (TradingCalendar, TradingDate)):
             value = str(hash(value))
         return str(hash(self)) > value
 
     def __lt__(self, value: Self | int | str, /) -> bool:
         if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            raise TypeError(
-                f"'>' not supported between instances of {value.__class__.__name__!r} "
-                f"and {self.__class__.__name__!r}"
-            )
+            unsupported_operator("<", self, value)
         if isinstance(value, int):
             value = str(value)
-        elif isinstance(value, self.__class__):
+        elif isinstance(value, (TradingCalendar, TradingDate)):
             value = str(hash(value))
         return str(hash(self)) < value
 
     def __ge__(self, value: Self | int | str, /) -> bool:
         if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            raise TypeError(
-                f"'>' not supported between instances of {value.__class__.__name__!r} "
-                f"and {self.__class__.__name__!r}"
-            )
+            unsupported_operator(">=", self, value)
         if isinstance(value, int):
             value = str(value)
-        elif isinstance(value, self.__class__):
+        elif isinstance(value, (TradingCalendar, TradingDate)):
             value = str(hash(value))
         return str(hash(self)) >= value
 
     def __le__(self, value: Self | int | str, /) -> bool:
         if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            raise TypeError(
-                f"'>' not supported between instances of {value.__class__.__name__!r} "
-                f"and {self.__class__.__name__!r}"
-            )
+            unsupported_operator("<=", self, value)
         if isinstance(value, int):
             value = str(value)
-        elif isinstance(value, self.__class__):
+        elif isinstance(value, (TradingCalendar, TradingDate)):
             value = str(hash(value))
         return str(hash(self)) <= value
 
@@ -453,8 +443,7 @@ class WeekCalendar(TradingCalendar):
         return self.asint()
 
     def __hash__(self) -> int:
-        y = list(self.cache)[0]
-        return int(f"{y}{self.asstr()}")
+        return int(f"{hash(self.start) - 1}9")
 
     def asint(self) -> int:
         """
@@ -549,18 +538,38 @@ class TradingDate:
         self.calendar = calendar
 
     def __eq__(self, value: Self | int | str, /) -> bool:
+        if isinstance(value, TradingCalendar):
+            if value.__class__ is TradingCalendar:
+                unsupported_operator("==", self, value)
+            return str(hash(self)) == str(hash(value))
         return self.asint() == int(value)
 
     def __gt__(self, value: Self | int | str, /) -> bool:
+        if isinstance(value, TradingCalendar):
+            if value.__class__ is TradingCalendar:
+                unsupported_operator(">", self, value)
+            return str(hash(self)) > str(hash(value))
         return self.asint() > int(value)
 
     def __lt__(self, value: Self | int | str, /) -> bool:
+        if isinstance(value, TradingCalendar):
+            if value.__class__ is TradingCalendar:
+                unsupported_operator("<", self, value)
+            return str(hash(self)) < str(hash(value))
         return self.asint() < int(value)
 
     def __ge__(self, value: Self | int | str, /) -> bool:
+        if isinstance(value, TradingCalendar):
+            if value.__class__ is TradingCalendar:
+                unsupported_operator(">=", self, value)
+            return str(hash(self)) >= str(hash(value))
         return self.asint() >= int(value)
 
     def __le__(self, value: Self | int | str, /) -> bool:
+        if isinstance(value, TradingCalendar):
+            if value.__class__ is TradingCalendar:
+                unsupported_operator("<=", self, value)
+            return str(hash(self)) <= str(hash(value))
         return self.asint() <= int(value)
 
     def __add__(self, value: int, /) -> Self:
@@ -702,6 +711,14 @@ def split_date(date: TradingDate | int | str) -> tuple[int, int, int]:
     """Split date to int numbers: year, month, and day."""
     datestr = str(date)
     return int(datestr[:-4]), int(datestr[-4:-2]), int(datestr[-2:])
+
+
+def unsupported_operator(op: str, obj: object, value: object) -> None:
+    """Raise TypeError."""
+    raise TypeError(
+        f"{op!r} not supported between instances of {obj.__class__.__name__!r} "
+        f"and {value.__class__.__name__!r}"
+    )
 
 
 class DateRange:
