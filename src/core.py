@@ -90,16 +90,22 @@ def get_trading_dates(
         Iterator of trade dates.
 
     """
+    if not isinstance(start, (int, str)):
+        raise TypeError(f"invalid startdate type: {type(start)}")
+    if not isinstance(end, (int, str)):
+        raise TypeError(f"invalid enddate type: {type(end)}")
     calendar = get_calendar(calendar_id)
     date = calendar.start if start is None else calendar.get_nearest_date_after(start)
     end = calendar.end.asint() if end is None else int(end)
-    while date <= end:
+    while date < end:
         yield date
         date = date.next()
+    if date == end:
+        yield date
 
 
 def daterange(
-    start: "TradingDate", stop: "TradingDate | int | str", step: int = 1
+    start: "TradingDate", stop: "TradingDate | int | str", step: int = 1, /
 ) -> Iterator["TradingDate"]:
     """
     Returns an iterator of trade dates from `start` (inclusive) to
@@ -120,24 +126,7 @@ def daterange(
         Iterator of trade dates.
 
     """
-    if step == 1:
-        while start < stop:
-            yield start
-            start = start.next()
-    elif step == -1:
-        while start > stop:
-            yield start
-            start = start.last()
-    elif step == 0:
-        raise ValueError("daterange() arg 3 must not be zero")
-    elif step > 0:
-        while start < stop:
-            yield start
-            start = start + step
-    else:
-        while start > stop:
-            yield start
-            start = start + step
+    return start.iterate_until(stop, step)
 
 
 def get_calendar(calendar_id: str = "chinese") -> "TradingCalendar":
@@ -562,6 +551,46 @@ class TradingDate:
         """Returns the last date."""
         y, m, d = self.__date
         return self.calendar.get_nearest_date_before(f"{y}{m:02}{d - 1:02}")
+
+    def iterate_until(self, stop: "TradingDate | int | str", step: int = 1, /):
+        """
+        Returns an iterator of trade dates from `self` (inclusive) to
+        `stop` (exclusive) by `step`.
+
+        Be equivalent to `daterange(self, stop, step)`.
+
+        Parameters
+        ----------
+        end : TradingDate | int | str
+            End date.
+        step : int, optional
+            Step, by default 1.
+
+        Returns
+        -------
+        Iterator[TradingDate]
+            Iterator of trade dates.
+
+        """
+        date = self
+        if step == 1:
+            while date < stop:
+                yield date
+                date = date.next()
+        elif step == -1:
+            while date > stop:
+                yield date
+                date = date.last()
+        elif step == 0:
+            raise ValueError("step must not be zero")
+        elif step > 0:
+            while date < stop:
+                yield date
+                date = date + step
+        else:
+            while date > stop:
+                yield date
+                date = date + step
 
     def asint(self) -> int:
         """

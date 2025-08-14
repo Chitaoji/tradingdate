@@ -63,8 +63,12 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.8
+* Bugfix: no longer raises an OutOfCalendarError when the `end` parameter for `get_trading_dates()` is None. 
+* New method `TradingDate.iterate_until()`.
+
 ### v0.0.7
-* Updated `make_calendar()`: raises `ValueError` when `calender_id` already exists.
+* Updated `make_calendar()`: raises ValueError when `calender_id` already exists.
 
 ### v0.0.6
 * New function `daterange()`.
@@ -74,7 +78,7 @@ This project falls under the BSD 3-Clause License.
 
 ### v0.0.4
 * Improved effeciency when making a calendar.
-* Updated message of `NotImplementedError` raised by `CalendarEngine.get_chinese_calendar()`.
+* Updated message of NotImplementedError raised by `CalendarEngine.get_chinese_calendar()`.
 
 ### v0.0.3
 * Updated `make_calendar()`: now accepts a date-list as the second positional argument instead of a dict.
