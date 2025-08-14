@@ -28,17 +28,21 @@ TradingCalendar(20040102 ~ 20251231, 'chinese')
 TradingDate(20250116)
 >>> print(date.year, date.month, date.day)
 2025 01 16
+
 >>> date - 20
 TradingDate(20241218)
 >>> date + 100
 TradingDate(20250617)
+
+>>> date.week.start, date.week.end
+(TradingDate(20250113), TradingDate(20250117))
 >>> date.month.start, date.month.end
 (TradingDate(20250102), TradingDate(20250127))
 >>> date.year.start, date.year.end
 (TradingDate(20250102), TradingDate(20251231))
 ```
 
-### Get trading dates
+### Get iterator of trading dates
 ```py
 >>> list(td.get_trading_dates(20250101, 20250106))
 [TradingDate(20250102), TradingDate(20250103), TradingDate(20250106)]
@@ -63,8 +67,13 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.8
+* Bugfix: no longer raises an OutOfCalendarError when the `end` parameter for `get_trading_dates()` is None. 
+* New method `TradingDate.iterate_until()`.
+* `daterange()` returns an instance of `DateRange` now.
+
 ### v0.0.7
-* Updated `make_calendar()`: raises `ValueError` when `calender_id` already exists.
+* Updated `make_calendar()`: raises ValueError when `calender_id` already exists.
 
 ### v0.0.6
 * New function `daterange()`.
@@ -74,7 +83,7 @@ This project falls under the BSD 3-Clause License.
 
 ### v0.0.4
 * Improved effeciency when making a calendar.
-* Updated message of `NotImplementedError` raised by `CalendarEngine.get_chinese_calendar()`.
+* Updated message of NotImplementedError raised by `CalendarEngine.get_chinese_calendar()`.
 
 ### v0.0.3
 * Updated `make_calendar()`: now accepts a date-list as the second positional argument instead of a dict.

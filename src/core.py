@@ -90,17 +90,23 @@ def get_trading_dates(
         Iterator of trade dates.
 
     """
+    if not isinstance(start, (int, str)):
+        raise TypeError(f"invalid startdate type: {type(start)}")
+    if not isinstance(end, (int, str)):
+        raise TypeError(f"invalid enddate type: {type(end)}")
     calendar = get_calendar(calendar_id)
     date = calendar.start if start is None else calendar.get_nearest_date_after(start)
     end = calendar.end.asint() if end is None else int(end)
-    while date <= end:
+    while date < end:
         yield date
         date = date.next()
+    if date == end:
+        yield date
 
 
 def daterange(
-    start: "TradingDate", stop: "TradingDate | int | str", step: int = 1
-) -> Iterator["TradingDate"]:
+    start: "TradingDate", stop: "TradingDate | int | str", step: int = 1, /
+) -> "DateRange":
     """
     Returns an iterator of trade dates from `start` (inclusive) to
     `stop` (exclusive) by `step`.
@@ -116,28 +122,11 @@ def daterange(
 
     Returns
     -------
-    Iterator[TradingDate]
+    DateRange
         Iterator of trade dates.
 
     """
-    if step == 1:
-        while start < stop:
-            yield start
-            start = start.next()
-    elif step == -1:
-        while start > stop:
-            yield start
-            start = start.last()
-    elif step == 0:
-        raise ValueError("daterange() arg 3 must not be zero")
-    elif step > 0:
-        while start < stop:
-            yield start
-            start = start + step
-    else:
-        while start > stop:
-            yield start
-            start = start + step
+    return DateRange(start, stop, step)
 
 
 def get_calendar(calendar_id: str = "chinese") -> "TradingCalendar":
@@ -225,6 +214,66 @@ class TradingCalendar:
             for m in self.cache[y]
             for d in self.cache[y][m]
         )
+
+    def __hash__(self) -> int:
+        return hash(str(self))
+
+    def __eq__(self, value: Self, /) -> bool:
+        if value.__class__ is TradingCalendar and self.__class__ is TradingCalendar:
+            return self.id == value.id
+        if isinstance(value, int):
+            value = str(value)
+        elif isinstance(value, self.__class__):
+            value = str(hash(value))
+        return str(hash(self)) == value
+
+    def __gt__(self, value: Self | int | str, /) -> bool:
+        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
+            raise TypeError(
+                f"'>' not supported between instances of {value.__class__.__name__!r} "
+                f"and {self.__class__.__name__!r}"
+            )
+        if isinstance(value, int):
+            value = str(value)
+        elif isinstance(value, self.__class__):
+            value = str(hash(value))
+        return str(hash(self)) > value
+
+    def __lt__(self, value: Self | int | str, /) -> bool:
+        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
+            raise TypeError(
+                f"'>' not supported between instances of {value.__class__.__name__!r} "
+                f"and {self.__class__.__name__!r}"
+            )
+        if isinstance(value, int):
+            value = str(value)
+        elif isinstance(value, self.__class__):
+            value = str(hash(value))
+        return str(hash(self)) < value
+
+    def __ge__(self, value: Self | int | str, /) -> bool:
+        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
+            raise TypeError(
+                f"'>' not supported between instances of {value.__class__.__name__!r} "
+                f"and {self.__class__.__name__!r}"
+            )
+        if isinstance(value, int):
+            value = str(value)
+        elif isinstance(value, self.__class__):
+            value = str(hash(value))
+        return str(hash(self)) >= value
+
+    def __le__(self, value: Self | int | str, /) -> bool:
+        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
+            raise TypeError(
+                f"'>' not supported between instances of {value.__class__.__name__!r} "
+                f"and {self.__class__.__name__!r}"
+            )
+        if isinstance(value, int):
+            value = str(value)
+        elif isinstance(value, self.__class__):
+            value = str(hash(value))
+        return str(hash(self)) <= value
 
     @property
     def start(self) -> "TradingDate":
@@ -344,8 +393,7 @@ class MonthCalendar(TradingCalendar):
     """Trading month."""
 
     def __repr__(self) -> str:
-        y = list(self.cache)[0]
-        return f"{self.__class__.__name__}({y}{self.asint():02}, {self.id!r})"
+        return f"{self.__class__.__name__}({hash(self)}, {self.id!r})"
 
     def __str__(self) -> str:
         return self.asstr()
@@ -354,7 +402,8 @@ class MonthCalendar(TradingCalendar):
         return self.asint()
 
     def __hash__(self) -> int:
-        return self.asint()
+        y = list(self.cache)[0]
+        return int(f"{y}{self.asint():02}")
 
     def asint(self) -> int:
         """
@@ -404,7 +453,8 @@ class WeekCalendar(TradingCalendar):
         return self.asint()
 
     def __hash__(self) -> int:
-        return self.asint()
+        y = list(self.cache)[0]
+        return int(f"{y}{self.asstr()}")
 
     def asint(self) -> int:
         """
@@ -435,9 +485,7 @@ class DayCalendar(TradingCalendar):
     """Trading day."""
 
     def __repr__(self) -> str:
-        y = list(self.cache)[0]
-        m = list(list(self.cache.values())[0])[0]
-        return f"{self.__class__.__name__}({y}{m:02}{self.asint():02}, {self.id!r})"
+        return f"{self.__class__.__name__}({hash(self)}, {self.id!r})"
 
     def __str__(self) -> str:
         return self.asstr()
@@ -446,7 +494,9 @@ class DayCalendar(TradingCalendar):
         return self.asint()
 
     def __hash__(self) -> int:
-        return self.asint()
+        y = list(self.cache)[0]
+        m = list(list(self.cache.values())[0])[0]
+        return int(f"{y}{m:02}{self.asint():02}")
 
     def asint(self) -> int:
         """
@@ -563,6 +613,28 @@ class TradingDate:
         y, m, d = self.__date
         return self.calendar.get_nearest_date_before(f"{y}{m:02}{d - 1:02}")
 
+    def iterate_until(self, stop: "TradingDate | int | str", step: int = 1, /):
+        """
+        Returns an iterator of trade dates from `self` (inclusive) to
+        `stop` (exclusive) by `step`.
+
+        Be equivalent to `daterange(self, stop, step)`.
+
+        Parameters
+        ----------
+        end : TradingDate | int | str
+            End date.
+        step : int, optional
+            Step, by default 1.
+
+        Returns
+        -------
+        DateRange
+            Iterator of trade dates.
+
+        """
+        return DateRange(self, stop, step)
+
     def asint(self) -> int:
         """
         Return an integer number equals to `yyyymmdd`.
@@ -630,6 +702,77 @@ def split_date(date: TradingDate | int | str) -> tuple[int, int, int]:
     """Split date to int numbers: year, month, and day."""
     datestr = str(date)
     return int(datestr[:-4]), int(datestr[-4:-2]), int(datestr[-2:])
+
+
+class DateRange:
+    """
+    Returns an iterator of trade dates from `start` (inclusive) to
+    `stop` (exclusive) by `step`.
+
+    """
+
+    def __init__(
+        self, start: TradingDate, stop: "TradingDate | int | str", step: int = 1, /
+    ) -> None:
+        self.__start = start
+        self.__stop = stop
+        self.__step = step
+
+    def __repr__(self) -> str:
+        rstr = f"{self.__class__.__name__}({self.__start}, {self.__stop}"
+        if self.__step != 1:
+            rstr += f", {self.__step}"
+        rstr += ")"
+        return rstr
+
+    def __iter__(self):
+        date, stop, step = self.__start, self.__stop, self.__step
+        if step == 1:
+            while date < stop:
+                yield date
+                date = date.next()
+        elif step == -1:
+            while date > stop:
+                yield date
+                date = date.last()
+        elif step == 0:
+            raise ValueError("step must not be zero")
+        elif step > 0:
+            while date < stop:
+                yield date
+                date = date + step
+        else:
+            while date > stop:
+                yield date
+                date = date + step
+
+    def tolist(self) -> list[TradingDate]:
+        """Equivalent to `list(self)`."""
+        return list(self)
+
+    def find_every_year(self) -> list[YearCalendar]:
+        """
+        Return a list of every year between `start` (inclusive) and `stop`
+        (exclusive) by `step`.
+
+        """
+        return sorted(set(x.year for x in self))
+
+    def find_every_month(self) -> list[MonthCalendar]:
+        """
+        Return a list of every month between `start` (inclusive) and `stop`
+        (exclusive) by `step`.
+
+        """
+        return sorted(set(x.month for x in self))
+
+    def find_every_week(self) -> list[WeekCalendar]:
+        """
+        Return a list of every week between `start` (inclusive) and `stop`
+        (exclusive) by `step`.
+
+        """
+        return sorted(set(x.week for x in self))
 
 
 class NotOnCalendarError(Exception):
