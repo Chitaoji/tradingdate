@@ -329,6 +329,10 @@ class TradingCalendar:
 
     def get_year(self, year: int | str) -> "YearCalendar":
         """Returns a year calendar."""
+        if self.__class__ is not TradingCalendar:
+            raise TypeError(
+                f"{self.__class__.__name__!r} object has no method 'get_year()'"
+            )
         y = int(year)
         return YearCalendar(self.id, {y: self.cache[y]})
 
@@ -347,6 +351,36 @@ class YearCalendar(TradingCalendar):
 
     def __hash__(self) -> int:
         return self.asint()
+
+    def __add__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            unexpexted_type(int, value)
+        if value < 0:
+            return self - abs(value)
+        cal = get_calendar(self.id)
+        year_list = list(cal.cache)
+        idx = year_list.index(self.asint())
+        if idx + value < len(year_list):
+            y = year_list[idx + value]
+            return cal.get_year(y)
+        raise OutOfCalendarError(
+            f"year {self} + {value} is out of range [{cal.start}, {cal.end}]"
+        )
+
+    def __sub__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            unexpexted_type(int, value)
+        if value < 0:
+            return self + abs(value)
+        cal = get_calendar(self.id)
+        year_list = list(cal.cache)
+        idx = year_list.index(self.asint())
+        if idx >= value:
+            y = year_list[idx - value]
+            return cal.get_year(y)
+        raise OutOfCalendarError(
+            f"year {self} - {value} is out of range [{cal.start}, {cal.end}]"
+        )
 
     def asint(self) -> int:
         """
@@ -394,6 +428,36 @@ class MonthCalendar(TradingCalendar):
     def __hash__(self) -> int:
         y = list(self.cache)[0]
         return int(f"{y}{self.asint():02}")
+
+    def __add__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            unexpexted_type(int, value)
+        if value < 0:
+            return self - abs(value)
+        cal = get_calendar(self.id)
+        month_list = [int(f"{y}{m:02}") for y, x in cal.cache.items() for m in x]
+        idx = month_list.index(hash(self))
+        if idx + value < len(month_list):
+            y = month_list[idx + value]
+            return cal.get_year(str(y)[:4]).get_month(str(y)[4:])
+        raise OutOfCalendarError(
+            f"month {hash(self)} + {value} is out of range [{cal.start}, {cal.end}]"
+        )
+
+    def __sub__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            unexpexted_type(int, value)
+        if value < 0:
+            return self + abs(value)
+        cal = get_calendar(self.id)
+        month_list = [int(f"{y}{m:02}") for y, x in cal.cache.items() for m in x]
+        idx = month_list.index(hash(self))
+        if idx >= value:
+            y = month_list[idx - value]
+            return cal.get_year(str(y)[:4]).get_month(str(y)[4:])
+        raise OutOfCalendarError(
+            f"month {hash(self)} - {value} is out of range [{cal.start}, {cal.end}]"
+        )
 
     def asint(self) -> int:
         """
@@ -445,6 +509,36 @@ class WeekCalendar(TradingCalendar):
     def __hash__(self) -> int:
         return int(f"{hash(self.start) - 1}9")
 
+    def __add__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            unexpexted_type(int, value)
+        if value < 0:
+            return self - abs(value)
+        cal = get_calendar(self.id)
+        month_list = [int(f"{y}{m:02}") for y, x in cal.cache.items() for m in x]
+        idx = month_list.index(hash(self))
+        if idx + value < len(month_list):
+            y = month_list[idx + value]
+            return cal.get_year(str(y)[:4]).get_month(str(y)[4:])
+        raise OutOfCalendarError(
+            f"week {hash(self)} + {value} is out of range [{cal.start}, {cal.end}]"
+        )
+
+    def __sub__(self, value: int, /) -> Self:
+        if not isinstance(value, int):
+            unexpexted_type(int, value)
+        if value < 0:
+            return self + abs(value)
+        cal = get_calendar(self.id)
+        month_list = [int(f"{y}{m:02}") for y, x in cal.cache.items() for m in x]
+        idx = month_list.index(hash(self))
+        if idx >= value:
+            y = month_list[idx - value]
+            return cal.get_year(str(y)[:4]).get_month(str(y)[4:])
+        raise OutOfCalendarError(
+            f"week {hash(self)} - {value} is out of range [{cal.start}, {cal.end}]"
+        )
+
     def asint(self) -> int:
         """
         Return an integer number equals to `ww`.
@@ -486,6 +580,12 @@ class DayCalendar(TradingCalendar):
         y = list(self.cache)[0]
         m = list(list(self.cache.values())[0])[0]
         return int(f"{y}{m:02}{self.asint():02}")
+
+    def __add__(self, value: int, /) -> Self:
+        return (get_trading_date(hash(self)) + value).day
+
+    def __sub__(self, value: int, /) -> Self:
+        return (get_trading_date(hash(self)) - value).day
 
     def asint(self) -> int:
         """
@@ -574,7 +674,7 @@ class TradingDate:
 
     def __add__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            raise TypeError(f"expected int, got {type(value).__name__} instead")
+            unexpexted_type(int, value)
         if value < 0:
             return self - abs(value)
         y, m, d = split_date(self.asstr())
@@ -588,7 +688,7 @@ class TradingDate:
 
     def __sub__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            raise TypeError(f"expected int, got {type(value).__name__} instead")
+            unexpexted_type(int, value)
         if value < 0:
             return self + abs(value)
         y, m, d = split_date(self.asstr())
@@ -622,12 +722,20 @@ class TradingDate:
         y, m, d = self.__date
         return self.calendar.get_nearest_date_before(f"{y}{m:02}{d - 1:02}")
 
-    def iterate_until(self, stop: "TradingDate | int | str", step: int = 1, /):
+    def iterate_until(
+        self,
+        stop: "TradingDate | int | str",
+        step: int = 1,
+        /,
+        *,
+        inclusive: bool = False,
+    ) -> "DateRange":
         """
         Returns an iterator of trade dates from `self` (inclusive) to
-        `stop` (exclusive) by `step`.
+        `stop` (inclusive or exclusive) by `step`.
 
-        Be equivalent to `daterange(self, stop, step)`.
+        Equivalent to `daterange(self, stop, step)` if `inclusive` is
+        False.
 
         Parameters
         ----------
@@ -635,6 +743,8 @@ class TradingDate:
             End date.
         step : int, optional
             Step, by default 1.
+        inclusive : bool, optional
+            Determines whether `stop` is inclusive in the iterator.
 
         Returns
         -------
@@ -642,7 +752,7 @@ class TradingDate:
             Iterator of trade dates.
 
         """
-        return DateRange(self, stop, step)
+        return DateRange(self, stop, step, inclusive=inclusive)
 
     def asint(self) -> int:
         """
@@ -721,6 +831,11 @@ def unsupported_operator(op: str, obj: object, value: object) -> None:
     )
 
 
+def unexpexted_type(typ: type, value: object) -> None:
+    """Raise TypeError."""
+    raise TypeError(f"expected {typ.__name__}, got {type(value).__name__} instead")
+
+
 class DateRange:
     """
     Returns an iterator of trade dates from `start` (inclusive) to
@@ -729,20 +844,34 @@ class DateRange:
     """
 
     def __init__(
-        self, start: TradingDate, stop: "TradingDate | int | str", step: int = 1, /
+        self,
+        start: TradingDate,
+        stop: "TradingDate | int | str",
+        step: int = 1,
+        /,
+        *,
+        inclusive: bool = False,
     ) -> None:
         self.__start = start
         self.__stop = stop
         self.__step = step
+        self.__inclusive = inclusive
 
     def __repr__(self) -> str:
         rstr = f"{self.__class__.__name__}({self.__start}, {self.__stop}"
         if self.__step != 1:
             rstr += f", {self.__step}"
+        if self.__inclusive:
+            rstr += ", inclusive=True"
         rstr += ")"
         return rstr
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[TradingDate]:
+        if self.__inclusive:
+            return self.__iter_inclusively()
+        return self.__iter_exclusively()
+
+    def __iter_exclusively(self) -> Iterator[TradingDate]:
         date, stop, step = self.__start, self.__stop, self.__step
         if step == 1:
             while date < stop:
@@ -760,6 +889,27 @@ class DateRange:
                 date = date + step
         else:
             while date > stop:
+                yield date
+                date = date + step
+
+    def __iter_inclusively(self) -> Iterator[TradingDate]:
+        date, stop, step = self.__start, self.__stop, self.__step
+        if step == 1:
+            while date <= stop:
+                yield date
+                date = date.next()
+        elif step == -1:
+            while date >= stop:
+                yield date
+                date = date.last()
+        elif step == 0:
+            raise ValueError("step must not be zero")
+        elif step > 0:
+            while date <= stop:
+                yield date
+                date = date + step
+        else:
+            while date >= stop:
                 yield date
                 date = date + step
 
