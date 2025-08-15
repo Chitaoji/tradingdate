@@ -67,6 +67,9 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.9
+* Updated support for comparison operators and 'in' operators.
+
 ### v0.0.8
 * Bugfix: no longer raises an OutOfCalendarError when the `end` parameter for `get_trading_dates()` is None. 
 * New method `TradingDate.iterate_until()`.
