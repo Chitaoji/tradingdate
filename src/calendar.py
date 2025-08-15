@@ -7,6 +7,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 """
 
 import datetime
+import sys
 from typing import TYPE_CHECKING, Iterator, Self
 
 from .calendar_engine import CalendarEngine
@@ -49,9 +50,15 @@ class TradingCalendar:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.start} ~ {self.end}, {self.id!r})"
 
-    def __contains__(self, value: "TradingDate | int | str") -> bool:
-        y, m, d = split_date(value)
-        return y in self.cache and m in self.cache[y] and d in self.cache[y][m]
+    def __contains__(
+        self, value: "int | str | TradingDate | TradingCalendar", /
+    ) -> bool:
+        if isinstance(value, (int, str, TradingDate)):
+            y, m, d = split_date(value)
+            return y in self.cache and m in self.cache[y] and d in self.cache[y][m]
+        if isinstance(value, TradingCalendar):
+            return value.id == self.id
+        return False
 
     def __iter__(self) -> Iterator["TradingDate"]:
         return (
@@ -64,32 +71,32 @@ class TradingCalendar:
     def __hash__(self) -> int:
         return hash(str(self))
 
-    def __valur2str(self, value: Self | int | str | "TradingDate", /) -> str:
+    def __valur2str(self, value: "int | str | TradingDate | TradingCalendar", /) -> str:
         if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            raise_unsupported_operator("==", self, value)
+            raise_unsupported_operator(self, value, 2)
         if isinstance(value, int):
             value = str(value)
         elif isinstance(value, (TradingCalendar, TradingDate)):
             value = str(hash(value))
         elif not isinstance(value, str):
-            raise_unsupported_operator("==", self, value)
+            raise_unsupported_operator(self, value, 2)
         return value
 
-    def __eq__(self, value: Self | int | str | "TradingDate", /) -> bool:
+    def __eq__(self, value: "int | str | TradingDate | TradingCalendar", /) -> bool:
         if value.__class__ is TradingCalendar and self.__class__ is TradingCalendar:
             return self.id == value.id
         return str(hash(self)) == self.__valur2str(value)
 
-    def __gt__(self, value: Self | int | str | "TradingDate", /) -> bool:
+    def __gt__(self, value: "int | str | TradingDate | TradingCalendar", /) -> bool:
         return str(hash(self)) > self.__valur2str(value)
 
-    def __lt__(self, value: Self | int | str | "TradingDate", /) -> bool:
+    def __lt__(self, value: "int | str | TradingDate | TradingCalendar", /) -> bool:
         return str(hash(self)) < self.__valur2str(value)
 
-    def __ge__(self, value: Self | int | str | "TradingDate", /) -> bool:
+    def __ge__(self, value: "int | str | TradingDate | TradingCalendar", /) -> bool:
         return str(hash(self)) >= self.__valur2str(value)
 
-    def __le__(self, value: Self | int | str | "TradingDate", /) -> bool:
+    def __le__(self, value: "int | str | TradingDate | TradingCalendar", /) -> bool:
         return str(hash(self)) <= self.__valur2str(value)
 
     @property
@@ -245,6 +252,19 @@ class YearCalendar(TradingCalendar):
             f"year {self} - {value} is out of range [{cal.start}, {cal.end}]"
         )
 
+    def __contains__(
+        self, value: "int | str | TradingDate | TradingCalendar", /
+    ) -> bool:
+        if isinstance(value, (int, str, TradingDate)):
+            return super().__contains__(value)
+        if isinstance(value, TradingCalendar):
+            if not value.id == self.id:
+                return False
+            if isinstance(value, YearCalendar):
+                return False
+            return str(hash(self)) in str(hash(value))
+        return False
+
     def next(self) -> Self:
         """Return the next year."""
         return self.end.next().year
@@ -324,6 +344,19 @@ class MonthCalendar(TradingCalendar):
             f"month {hash(self)} - {value} is out of range [{cal.start}, {cal.end}]"
         )
 
+    def __contains__(
+        self, value: "int | str | TradingDate | TradingCalendar", /
+    ) -> bool:
+        if isinstance(value, (int, str, TradingDate)):
+            return super().__contains__(value)
+        if isinstance(value, TradingCalendar):
+            if not value.id == self.id:
+                return False
+            if isinstance(value, (YearCalendar, MonthCalendar)):
+                return False
+            return str(hash(self)) in str(hash(value))
+        return False
+
     def next(self) -> Self:
         """Return the next month."""
         return self.end.next().month
@@ -393,6 +426,19 @@ class WeekCalendar(TradingCalendar):
             week = week.last()
         return week
 
+    def __contains__(
+        self, value: "int | str | TradingDate | TradingCalendar", /
+    ) -> bool:
+        if isinstance(value, (int, str, TradingDate)):
+            return super().__contains__(value)
+        if isinstance(value, TradingCalendar):
+            if not value.id == self.id:
+                return False
+            if isinstance(value, (YearCalendar, MonthCalendar, WeekCalendar)):
+                return False
+            return super().__contains__(value.start)
+        return False
+
     def next(self) -> Self:
         """Return the next week."""
         return self.end.next().week
@@ -449,6 +495,13 @@ class DayCalendar(TradingCalendar):
     def __sub__(self, value: int, /) -> Self:
         return (self.start - value).day
 
+    def __contains__(
+        self, value: "int | str | TradingDate | TradingCalendar", /
+    ) -> bool:
+        if isinstance(value, (int, str, TradingDate)):
+            return super().__contains__(value)
+        return False
+
     def next(self) -> Self:
         """Return the next day."""
         return self.end.next().day
@@ -482,8 +535,21 @@ class DayCalendar(TradingCalendar):
         return f"{self.asint():02}"
 
 
-def raise_unsupported_operator(op: str, obj: object, value: object) -> None:
+def raise_unsupported_operator(obj: object, value: object, stacklevel: int) -> None:
     """Raise TypeError."""
+    match sys._getframe(stacklevel).f_code.co_name:  # pylint: disable=protected-access
+        case "__eq__":
+            op = "=="
+        case "__gt__":
+            op = ">"
+        case "__lt__":
+            op = "<"
+        case "__ge__":
+            op = ">="
+        case "__le__":
+            op = "<="
+        case _ as x:
+            op = x
     raise TypeError(
         f"{op!r} not supported between instances of {obj.__class__.__name__!r} "
         f"and {value.__class__.__name__!r}"

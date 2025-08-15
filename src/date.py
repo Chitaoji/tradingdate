@@ -9,7 +9,6 @@ NOTE: this module is private. All functions and objects are available in the mai
 from typing import TYPE_CHECKING, Iterator, Self
 
 if TYPE_CHECKING:
-    from ._typing import CalendarDict
     from .calendar import (
         DayCalendar,
         MonthCalendar,
