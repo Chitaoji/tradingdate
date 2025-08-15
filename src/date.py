@@ -6,7 +6,7 @@ NOTE: this module is private. All functions and objects are available in the mai
 
 """
 
-from typing import TYPE_CHECKING, Iterator, Self
+from typing import TYPE_CHECKING, Callable, Iterator, Self
 
 if TYPE_CHECKING:
     from .calendar import (
@@ -282,7 +282,7 @@ class DateRange:
 
     def find_every_year(self) -> list["YearCalendar"]:
         """
-        Return a list of every year between `start` (inclusive) and `stop`
+        Return a list of YearCalendar between `start` (inclusive) and `stop`
         (exclusive) by `step`.
 
         """
@@ -290,7 +290,7 @@ class DateRange:
 
     def find_every_month(self) -> list["MonthCalendar"]:
         """
-        Return a list of every month between `start` (inclusive) and `stop`
+        Return a list of MonthCalendar between `start` (inclusive) and `stop`
         (exclusive) by `step`.
 
         """
@@ -298,11 +298,15 @@ class DateRange:
 
     def find_every_week(self) -> list["WeekCalendar"]:
         """
-        Return a list of every week between `start` (inclusive) and `stop`
+        Return a list of WeekCalendar between `start` (inclusive) and `stop`
         (exclusive) by `step`.
 
         """
         return sorted(set(x.week for x in self))
+
+    def apply[T](self, func: Callable[[TradingDate], T]) -> list[T]:
+        """Apply a function on each TradingDate and return a list."""
+        return [func(x) for x in self]
 
 
 def split_date(date: TradingDate | int | str) -> tuple[int, int, int]:

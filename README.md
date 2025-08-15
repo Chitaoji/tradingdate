@@ -67,6 +67,9 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.10
+* New method `DateRange.apply()`.
+
 ### v0.0.9
 * Updated support for comparison operators and 'in' operators.
 
