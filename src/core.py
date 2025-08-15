@@ -218,52 +218,33 @@ class TradingCalendar:
     def __hash__(self) -> int:
         return hash(str(self))
 
+    def __valur2str(self, value: Self | int | str | "TradingDate", /) -> str:
+        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
+            raise_unsupported_operator("==", self, value)
+        if isinstance(value, int):
+            value = str(value)
+        elif isinstance(value, (TradingCalendar, TradingDate)):
+            value = str(hash(value))
+        elif not isinstance(value, str):
+            raise_unsupported_operator("==", self, value)
+        return value
+
     def __eq__(self, value: Self | int | str | "TradingDate", /) -> bool:
         if value.__class__ is TradingCalendar and self.__class__ is TradingCalendar:
             return self.id == value.id
-        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            unsupported_operator("==", self, value)
-        if isinstance(value, int):
-            value = str(value)
-        elif isinstance(value, (TradingCalendar, TradingDate)):
-            value = str(hash(value))
-        return str(hash(self)) == value
+        return str(hash(self)) == self.__valur2str(value)
 
     def __gt__(self, value: Self | int | str | "TradingDate", /) -> bool:
-        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            unsupported_operator(">", self, value)
-        if isinstance(value, int):
-            value = str(value)
-        elif isinstance(value, (TradingCalendar, TradingDate)):
-            value = str(hash(value))
-        return str(hash(self)) > value
+        return str(hash(self)) > self.__valur2str(value)
 
     def __lt__(self, value: Self | int | str | "TradingDate", /) -> bool:
-        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            unsupported_operator("<", self, value)
-        if isinstance(value, int):
-            value = str(value)
-        elif isinstance(value, (TradingCalendar, TradingDate)):
-            value = str(hash(value))
-        return str(hash(self)) < value
+        return str(hash(self)) < self.__valur2str(value)
 
     def __ge__(self, value: Self | int | str | "TradingDate", /) -> bool:
-        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            unsupported_operator(">=", self, value)
-        if isinstance(value, int):
-            value = str(value)
-        elif isinstance(value, (TradingCalendar, TradingDate)):
-            value = str(hash(value))
-        return str(hash(self)) >= value
+        return str(hash(self)) >= self.__valur2str(value)
 
     def __le__(self, value: Self | int | str | "TradingDate", /) -> bool:
-        if value.__class__ is TradingCalendar or self.__class__ is TradingCalendar:
-            unsupported_operator("<=", self, value)
-        if isinstance(value, int):
-            value = str(value)
-        elif isinstance(value, (TradingCalendar, TradingDate)):
-            value = str(hash(value))
-        return str(hash(self)) <= value
+        return str(hash(self)) <= self.__valur2str(value)
 
     @property
     def start(self) -> "TradingDate":
@@ -360,7 +341,7 @@ class YearCalendar(TradingCalendar):
 
     def __add__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self - abs(value)
         cal = self.origin()
@@ -375,7 +356,7 @@ class YearCalendar(TradingCalendar):
 
     def __sub__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self + abs(value)
         cal = self.origin()
@@ -445,7 +426,7 @@ class MonthCalendar(TradingCalendar):
 
     def __add__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self - abs(value)
         cal = self.origin()
@@ -460,7 +441,7 @@ class MonthCalendar(TradingCalendar):
 
     def __sub__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self + abs(value)
         cal = self.origin()
@@ -533,7 +514,7 @@ class WeekCalendar(TradingCalendar):
 
     def __add__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self - abs(value)
         week = self
@@ -543,7 +524,7 @@ class WeekCalendar(TradingCalendar):
 
     def __sub__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self + abs(value)
         week = self
@@ -667,42 +648,32 @@ class TradingDate:
 
     def __eq__(self, value: Self | int | str | TradingCalendar, /) -> bool:
         if isinstance(value, TradingCalendar):
-            if value.__class__ is TradingCalendar:
-                unsupported_operator("==", self, value)
-            return str(hash(self)) == str(hash(value))
+            return value == self
         return self.asint() == int(value)
 
     def __gt__(self, value: Self | int | str | TradingCalendar, /) -> bool:
         if isinstance(value, TradingCalendar):
-            if value.__class__ is TradingCalendar:
-                unsupported_operator(">", self, value)
-            return str(hash(self)) > str(hash(value))
+            return value < self
         return self.asint() > int(value)
 
     def __lt__(self, value: Self | int | str | TradingCalendar, /) -> bool:
         if isinstance(value, TradingCalendar):
-            if value.__class__ is TradingCalendar:
-                unsupported_operator("<", self, value)
-            return str(hash(self)) < str(hash(value))
+            return value > self
         return self.asint() < int(value)
 
     def __ge__(self, value: Self | int | str | TradingCalendar, /) -> bool:
         if isinstance(value, TradingCalendar):
-            if value.__class__ is TradingCalendar:
-                unsupported_operator(">=", self, value)
-            return str(hash(self)) >= str(hash(value))
+            return value <= self
         return self.asint() >= int(value)
 
     def __le__(self, value: Self | int | str | TradingCalendar, /) -> bool:
         if isinstance(value, TradingCalendar):
-            if value.__class__ is TradingCalendar:
-                unsupported_operator("<=", self, value)
-            return str(hash(self)) <= str(hash(value))
+            return value >= self
         return self.asint() <= int(value)
 
     def __add__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self - abs(value)
         y, m, d = split_date(self.asstr())
@@ -716,7 +687,7 @@ class TradingDate:
 
     def __sub__(self, value: int, /) -> Self:
         if not isinstance(value, int):
-            unexpexted_type(int, value)
+            raise_unexpexted_type(int, value)
         if value < 0:
             return self + abs(value)
         y, m, d = split_date(self.asstr())
@@ -760,7 +731,7 @@ class TradingDate:
     ) -> "DateRange":
         """
         Returns an iterator of trade dates from `self` (inclusive) to
-        `stop` (inclusive or exclusive) by `step`.
+        `stop` (inclusive or exclusive, determined by argument) by `step`.
 
         Equivalent to `daterange(self, stop, step)` if `inclusive` is
         False.
@@ -851,23 +822,10 @@ def split_date(date: TradingDate | int | str) -> tuple[int, int, int]:
     return int(datestr[:-4]), int(datestr[-4:-2]), int(datestr[-2:])
 
 
-def unsupported_operator(op: str, obj: object, value: object) -> None:
-    """Raise TypeError."""
-    raise TypeError(
-        f"{op!r} not supported between instances of {obj.__class__.__name__!r} "
-        f"and {value.__class__.__name__!r}"
-    )
-
-
-def unexpexted_type(typ: type, value: object) -> None:
-    """Raise TypeError."""
-    raise TypeError(f"expected {typ.__name__}, got {type(value).__name__} instead")
-
-
 class DateRange:
     """
     Returns an iterator of trade dates from `start` (inclusive) to
-    `stop` (exclusive) by `step`.
+    `stop` (inclusive or exclusive, determined by argument) by `step`.
 
     """
 
@@ -968,6 +926,19 @@ class DateRange:
 
         """
         return sorted(set(x.week for x in self))
+
+
+def raise_unsupported_operator(op: str, obj: object, value: object) -> None:
+    """Raise TypeError."""
+    raise TypeError(
+        f"{op!r} not supported between instances of {obj.__class__.__name__!r} "
+        f"and {value.__class__.__name__!r}"
+    )
+
+
+def raise_unexpexted_type(typ: type, value: object) -> None:
+    """Raise TypeError."""
+    raise TypeError(f"expected {typ.__name__}, got {type(value).__name__} instead")
 
 
 class NotOnCalendarError(Exception):
