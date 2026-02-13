@@ -12,20 +12,14 @@ from .calendar import NotOnCalendarError, TradingCalendar
 from .calendar_engine import CalendarEngine
 from .date import DateRange, TradingDate
 
-__all__ = [
-    "get_trading_date",
-    "get_trading_dates",
-    "daterange",
-    "get_calendar",
-    "make_calendar",
-]
+__all__ = ["date", "daterange", "get_calendar", "make_calendar"]
 
 
-def get_trading_date(
+def date(
     date: int | str,
     /,
     calendar_id: str = "chinese",
-    missing: Literal["use_next", "use_last", "raise"] = "use_last",
+    missing: Literal["use_next", "use_before", "raise"] = "use_before",
 ) -> TradingDate:
     """
     Returns a `TradingDate` object.
@@ -36,11 +30,11 @@ def get_trading_date(
         The date.
     calendar_id : str, optional
         Calendar id, by default "chinese".
-    missing : Literal["use_next", "use_last", "raise"], optional
+    missing : Literal["use_next", "use_before", "raise"], optional
         Used when `date` is not found in the calendar. If "use_next",
-        return the nearest trade date after `date`; if "use_last",
+        return the nearest trade date after `date`; if "use_before",
         return the nearest trade date before it; if "raise", raise
-        error. By default "use_last".
+        error. By default "use_before".
 
     Returns
     -------
@@ -53,7 +47,7 @@ def get_trading_date(
     match missing:
         case "use_next":
             return calendar.get_nearest_date_after(date)
-        case "use_last":
+        case "use_before":
             return calendar.get_nearest_date_before(date)
         case "raise":
             raise NotOnCalendarError(f"date {date} is not on the calendar")
@@ -61,14 +55,17 @@ def get_trading_date(
             raise ValueError(f"invalid value for argument 'not_exist': {x!r}")
 
 
-def get_trading_dates(
+def daterange(
     start: int | str | None = None,
     end: int | str | None = None,
+    step: int = 1,
+    /,
     calendar_id: str = "chinese",
+    include_end: bool = False,
 ) -> Iterator[TradingDate]:
     """
-    Returns an iterator of trade dates between `start` and `end`
-    (including `start` and `end`).
+    Returns an iterator of trade dates from `start` (inclusive) to
+    `stop` (exclusive) by `step`.
 
     Parameters
     ----------
@@ -76,8 +73,12 @@ def get_trading_dates(
         Start date, by default None.
     end : int | str | None, optional
         End date, by default None.
+    step : int, optional
+        Step, by default 1.
     calendar_id : str, optional
         Calendar id, by default "chinese".
+    include_end : bool, optional
+        Whether the end date should be included, by default False.
 
     Returns
     -------
@@ -85,43 +86,10 @@ def get_trading_dates(
         Iterator of trade dates.
 
     """
-    if not isinstance(start, (int, str)):
-        raise TypeError(f"invalid startdate type: {type(start)}")
-    if not isinstance(end, (int, str)):
-        raise TypeError(f"invalid enddate type: {type(end)}")
     calendar = get_calendar(calendar_id)
     date = calendar.start if start is None else calendar.get_nearest_date_after(start)
-    end = calendar.end.asint() if end is None else int(end)
-    while date < end:
-        yield date
-        date = date.next()
-    if date == end:
-        yield date
-
-
-def daterange(
-    start: TradingDate, stop: TradingDate | int | str, step: int = 1, /
-) -> DateRange:
-    """
-    Returns an iterator of trade dates from `start` (inclusive) to
-    `stop` (exclusive) by `step`.
-
-    Parameters
-    ----------
-    start : TradingDate
-        Start date.
-    end : TradingDate | int | str
-        End date.
-    step : int, optional
-        Step, by default 1.
-
-    Returns
-    -------
-    DateRange
-        Iterator of trade dates.
-
-    """
-    return DateRange(start, stop, step)
+    end = calendar.end if end is None else end
+    return DateRange(date, end, step, include_end=include_end)
 
 
 def get_calendar(calendar_id: str = "chinese") -> TradingCalendar:
@@ -148,7 +116,9 @@ def get_calendar(calendar_id: str = "chinese") -> TradingCalendar:
     return cal
 
 
-def make_calendar(calendar_id: str, date_list: list[int | str]) -> TradingCalendar:
+def make_calendar(
+    calendar_id: str, dates: Iterator[int | str | TradingDate]
+) -> TradingCalendar:
     """
     Make a new calendar and register it in the engine.
 
@@ -156,8 +126,8 @@ def make_calendar(calendar_id: str, date_list: list[int | str]) -> TradingCalend
     ----------
     calendar_id : str
         Calendar id.
-    date_list : list[int | str]
-        List of dates formatted by `yyyymmdd`.
+    dates : Iterator[int | str | TradingDate]
+        Dates formatted by `yyyymmdd`.
 
     Returns
     -------
@@ -166,5 +136,5 @@ def make_calendar(calendar_id: str, date_list: list[int | str]) -> TradingCalend
 
     """
     engine = CalendarEngine()
-    engine.register_calendar(TradingCalendar, calendar_id, date_list)
+    engine.register_calendar(TradingCalendar, calendar_id, list(dates))
     return engine.get_calendar(calendar_id)

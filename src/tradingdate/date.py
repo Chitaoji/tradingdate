@@ -126,7 +126,7 @@ class TradingDate:
         step: int = 1,
         /,
         *,
-        inclusive: bool = False,
+        include_end: bool = False,
     ) -> "DateRange":
         """
         Returns an iterator of trade dates from `self` (inclusive) to
@@ -141,7 +141,7 @@ class TradingDate:
             End date.
         step : int, optional
             Step, by default 1.
-        inclusive : bool, optional
+        include_end : bool, optional
             Determines whether `stop` is inclusive in the iterator.
 
         Returns
@@ -150,7 +150,7 @@ class TradingDate:
             Iterator of trade dates.
 
         """
-        return DateRange(self, stop, step, inclusive=inclusive)
+        return DateRange(self, stop, step, include_end=include_end)
 
     def asint(self) -> int:
         """
@@ -213,24 +213,24 @@ class DateRange:
         step: int = 1,
         /,
         *,
-        inclusive: bool = False,
+        include_end: bool = False,
     ) -> None:
         self.__start = start
         self.__stop = stop
         self.__step = step
-        self.__inclusive = inclusive
+        self.__include_end = include_end
 
     def __repr__(self) -> str:
         rstr = f"{self.__class__.__name__}({self.__start}, {self.__stop}"
         if self.__step != 1:
             rstr += f", {self.__step}"
-        if self.__inclusive:
-            rstr += ", inclusive=True"
+        if self.__include_end:
+            rstr += ", include_end=True"
         rstr += ")"
         return rstr
 
     def __iter__(self) -> Iterator[TradingDate]:
-        if self.__inclusive:
+        if self.__include_end:
             return self.__iter_inclusively()
         return self.__iter_exclusively()
 
@@ -282,24 +282,21 @@ class DateRange:
 
     def find_every_year(self) -> list["YearCalendar"]:
         """
-        Return a list of YearCalendar between `start` (inclusive) and `stop`
-        (exclusive) by `step`.
+        Return a list of YearCalendar between `start` and `stop` by `step`.
 
         """
         return sorted(set(x.year for x in self))
 
     def find_every_month(self) -> list["MonthCalendar"]:
         """
-        Return a list of MonthCalendar between `start` (inclusive) and `stop`
-        (exclusive) by `step`.
+        Return a list of MonthCalendar between `start` and `stop` by `step`.
 
         """
         return sorted(set(x.month for x in self))
 
     def find_every_week(self) -> list["WeekCalendar"]:
         """
-        Return a list of WeekCalendar between `start` (inclusive) and `stop`
-        (exclusive) by `step`.
+        Return a list of WeekCalendar between `start` and `stop` by `step`.
 
         """
         return sorted(set(x.week for x in self))

@@ -13,7 +13,8 @@ import chinese_calendar
 
 if TYPE_CHECKING:
     from ._typing import CalendarDict
-    from .core import TradingCalendar
+    from .calendar import TradingCalendar
+    from .date import TradingDate
 
 __all__ = ["CalendarEngine"]
 
@@ -43,8 +44,7 @@ class CalendarEngine:
                 )
             except NotImplementedError as e:
                 e.add_note(
-                    "please try 'pip install --upgrade chinesecalendar' in the "
-                    "console"
+                    "please try 'pip install --upgrade chinesecalendar' in the console"
                 )
                 raise e
             for x in workdays:
@@ -66,7 +66,7 @@ class CalendarEngine:
         self,
         constructor: type["TradingCalendar"],
         calendar_id: str,
-        date_list: list[int | str],
+        date_list: list["int | str | TradingDate"],
     ) -> None:
         """Register a calendar."""
         if calendar_id in self.__calendar_cache:
