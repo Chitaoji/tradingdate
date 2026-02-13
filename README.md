@@ -16,14 +16,14 @@ chinesecalendar
 >>> import tradingdate as td
 >>> cal = td.get_calendar("chinese") # by default "chinese"
 >>> cal
-TradingCalendar(20040102 ~ 20251231, 'chinese')
+TradingCalendar(20040102 ~ 20261231, 'chinese')
 >>> list(cal)[:3]
 [TradingDate(20040102), TradingDate(20040105), TradingDate(20040106)]
 ```
 
 ### Get a trading date
 ```py
->>> date = td.get_trading_date(20250116)
+>>> date = td.date(20250116)
 >>> date
 TradingDate(20250116)
 >>> print(date.year, date.month, date.day)
@@ -44,7 +44,7 @@ TradingDate(20250617)
 
 ### Get iterator of trading dates
 ```py
->>> list(td.get_trading_dates(20250101, 20250106))
+>>> list(td.daterange(20250101, 20250107))
 [TradingDate(20250102), TradingDate(20250103), TradingDate(20250106)]
 ```
 
@@ -52,7 +52,7 @@ TradingDate(20250617)
 ```py
 >>> td.make_calendar("user-defined", [20250101, 20250115, 20250201])
 TradingCalendar(20250101 ~ 20250201, 'user-defined')
->>> list(td.get_trading_dates(20250101, 20250131, calendar_id="user-defined"))
+>>> list(td.daterange(20250101, 20250131, calendar_id="user-defined"))
 [TradingDate(20250101), TradingDate(20250115)]
 ```
 
@@ -67,6 +67,13 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.11
+* New parameter for `daterange()`: `step` and `include_end`. 
+* Removed `get_trading_dates()`, use `daterange(include_end=True)` instead.
+* Renamed `get_trading_date()` to `date()`.
+* `date(missing = 'use_last')` is deprecated, use `date(missing = 'use_before')` now.
+* `make_calendar()` can now receive an iterator of int, str or`Tradingtate` objects, and the parameter `date_list` is renamed to `dates`.
+
 ### v0.0.10
 * New method `DateRange.apply()`.
 
