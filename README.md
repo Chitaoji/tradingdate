@@ -67,6 +67,9 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.12
+* Fixed the returntype of `daterange()`.
+
 ### v0.0.11
 * New parameters for `daterange()`: `step` and `include_end`. 
 * Removed `get_trading_dates()`, use `daterange(include_end=True)` instead.
