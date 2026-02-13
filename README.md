@@ -67,8 +67,11 @@ TradingCalendar(20250101 ~ 20250201, 'user-defined')
 This project falls under the BSD 3-Clause License.
 
 ## History
+### v0.0.12
+* Fixed the returntype of `daterange()`.
+
 ### v0.0.11
-* New parameter for `daterange()`: `step` and `include_end`. 
+* New parameters for `daterange()`: `step` and `include_end`. 
 * Removed `get_trading_dates()`, use `daterange(include_end=True)` instead.
 * Renamed `get_trading_date()` to `date()`.
 * `date(missing = 'use_last')` is deprecated, use `date(missing = 'use_before')` now.

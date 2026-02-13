@@ -62,7 +62,7 @@ def daterange(
     /,
     calendar_id: str = "chinese",
     include_end: bool = False,
-) -> Iterator[TradingDate]:
+) -> DateRange:
     """
     Returns an iterator of trade dates from `start` (inclusive) to
     `stop` (exclusive) by `step`.
@@ -82,7 +82,7 @@ def daterange(
 
     Returns
     -------
-    Iterator[TradingDate]
+    DateRange
         Iterator of trade dates.
 
     """
